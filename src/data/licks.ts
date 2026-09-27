@@ -1,0 +1,361 @@
+// Lick library. Frets are written as offsets from the minor-pentatonic box-1 root
+// on the low E string, so every lick can be transposed to any key.
+// strings: 0 = low E, 1 = A, 2 = D, 3 = G, 4 = B, 5 = high e
+
+export type Technique = 'b' | 'hb' | 'r' | 'h' | 'p' | 's' | 'v';
+
+export interface LickNote {
+  s: number; // string
+  f: number; // fret offset from root fret
+  d: number; // duration in beats
+  t?: Technique; // technique arriving at / applied to this note
+  x?: Array<[number, number]>; // extra simultaneous notes [string, fretOffset]
+  rest?: boolean;
+}
+
+export interface Lick {
+  id: string;
+  name: string;
+  level: 1 | 2 | 3 | 4;
+  tonality: 'minor' | 'major'; // major licks are written in the relative-minor box
+  box: number; // 1-5 (or 0 for "BB box" / extended)
+  style: string;
+  bpm: number;
+  notes: LickNote[];
+  description: string;
+  tips: string[];
+  function: 'opener' | 'middle' | 'ending' | 'any';
+}
+
+const R = (d: number): LickNote => ({ s: 0, f: 0, d, rest: true });
+
+export const LICKS: Lick[] = [
+  {
+    id: 'descending-run',
+    name: 'Box 1 Descending Run',
+    level: 1,
+    tonality: 'minor',
+    box: 1,
+    style: 'Rock / Blues',
+    bpm: 80,
+    function: 'ending',
+    description: 'The first "lick" every guitarist learns: run down the top of box 1 and land on the root.',
+    tips: ['Alternate pick: down-up-down-up.', 'Land on the root with vibrato for a strong ending.'],
+    notes: [
+      { s: 5, f: 3, d: 0.5 },
+      { s: 5, f: 0, d: 0.5 },
+      { s: 4, f: 3, d: 0.5 },
+      { s: 4, f: 0, d: 0.5 },
+      { s: 3, f: 2, d: 0.5 },
+      { s: 3, f: 0, d: 0.5 },
+      { s: 2, f: 2, d: 2, t: 'v' },
+    ],
+  },
+  {
+    id: 'bend-release',
+    name: 'Bend, Release, Resolve',
+    level: 1,
+    tonality: 'minor',
+    box: 1,
+    style: 'Blues',
+    bpm: 70,
+    function: 'ending',
+    description: 'Bend the 4th up to the 5th, release, then walk down to the root.',
+    tips: ['Use your ring finger for the bend, with middle and index fingers behind it pushing too.', 'Check your bend: it should sound like the note two frets higher.'],
+    notes: [
+      { s: 3, f: 2, d: 1, t: 'b' },
+      { s: 3, f: 2, d: 0.5, t: 'r' },
+      { s: 3, f: 0, d: 0.5 },
+      { s: 2, f: 2, d: 2, t: 'v' },
+    ],
+  },
+  {
+    id: 'high-bend',
+    name: 'The Classic Rock Bend',
+    level: 1,
+    tonality: 'minor',
+    box: 1,
+    style: 'Rock',
+    bpm: 80,
+    function: 'opener',
+    description: 'Bend on the G string, then hit the B and high e root. Heard in a thousand solos.',
+    tips: ['Mute the strings you are not playing with the palm of your picking hand.'],
+    notes: [
+      { s: 3, f: 2, d: 1, t: 'b' },
+      { s: 4, f: 0, d: 0.5 },
+      { s: 5, f: 0, d: 1.5, t: 'v' },
+      R(1),
+    ],
+  },
+  {
+    id: 'hammer-climb',
+    name: 'Hammer-On Climb',
+    level: 1,
+    tonality: 'minor',
+    box: 1,
+    style: 'Rock',
+    bpm: 80,
+    function: 'opener',
+    description: 'Climb up through box 1 with hammer-ons. Builds left-hand strength and smoothness.',
+    tips: ['Pick only the first note on each string; hammer the second.', 'Hammer with the fingertip, close to the fret.'],
+    notes: [
+      { s: 1, f: 0, d: 0.5 },
+      { s: 1, f: 2, d: 0.5, t: 'h' },
+      { s: 2, f: 0, d: 0.5 },
+      { s: 2, f: 2, d: 0.5, t: 'h' },
+      { s: 3, f: 0, d: 0.5 },
+      { s: 3, f: 2, d: 0.5, t: 'h' },
+      { s: 4, f: 0, d: 1, t: 'v' },
+    ],
+  },
+  {
+    id: 'pull-off-cascade',
+    name: 'Pull-Off Cascade',
+    level: 2,
+    tonality: 'minor',
+    box: 1,
+    style: 'Rock',
+    bpm: 90,
+    function: 'middle',
+    description: 'Triplet pull-offs on the top strings — the "Jimmy Page" fast sound.',
+    tips: ['Start slow! Each group of three is one beat.', 'Pull the finger slightly downward to "pluck" the lower note.'],
+    notes: [
+      { s: 5, f: 3, d: 1 / 3 },
+      { s: 5, f: 0, d: 1 / 3, t: 'p' },
+      { s: 4, f: 3, d: 1 / 3 },
+      { s: 5, f: 3, d: 1 / 3 },
+      { s: 5, f: 0, d: 1 / 3, t: 'p' },
+      { s: 4, f: 3, d: 1 / 3 },
+      { s: 4, f: 3, d: 1 / 3 },
+      { s: 4, f: 0, d: 1 / 3, t: 'p' },
+      { s: 3, f: 2, d: 1 / 3 },
+      { s: 3, f: 2, d: 1, t: 'v' },
+    ],
+  },
+  {
+    id: 'repeating-triplet',
+    name: 'Repeating Triplet',
+    level: 2,
+    tonality: 'minor',
+    box: 1,
+    style: 'Rock',
+    bpm: 85,
+    function: 'middle',
+    description: 'A three-note loop that builds tension. Repeat it and then resolve.',
+    tips: ['Keep it even: "tri-pl-et, tri-pl-et".', 'Great way to build excitement before a big bend.'],
+    notes: [
+      { s: 5, f: 0, d: 1 / 3 },
+      { s: 4, f: 3, d: 1 / 3 },
+      { s: 4, f: 0, d: 1 / 3 },
+      { s: 5, f: 0, d: 1 / 3 },
+      { s: 4, f: 3, d: 1 / 3 },
+      { s: 4, f: 0, d: 1 / 3 },
+      { s: 5, f: 0, d: 1 / 3 },
+      { s: 4, f: 3, d: 1 / 3 },
+      { s: 4, f: 0, d: 1 / 3 },
+      { s: 5, f: 0, d: 1, t: 'v' },
+    ],
+  },
+  {
+    id: 'double-stop',
+    name: 'Chuck Berry Double-Stops',
+    level: 2,
+    tonality: 'minor',
+    box: 1,
+    style: 'Rock & Roll',
+    bpm: 110,
+    function: 'opener',
+    description: 'Two notes at once with one finger barred across the B and e strings. Instant rock & roll.',
+    tips: ['Flatten your index or ring finger across both strings.', 'Pick with short, sharp strokes.'],
+    notes: [
+      { s: 4, f: 3, d: 0.5, x: [[5, 3]] },
+      { s: 4, f: 3, d: 0.5, x: [[5, 3]] },
+      { s: 4, f: 3, d: 0.5, x: [[5, 3]] },
+      { s: 4, f: 3, d: 0.5, x: [[5, 3]] },
+      { s: 4, f: 0, d: 0.5, x: [[5, 0]] },
+      { s: 4, f: 0, d: 0.5, x: [[5, 0]] },
+      { s: 3, f: 2, d: 1, t: 'hb' },
+    ],
+  },
+  {
+    id: 'blue-note',
+    name: 'Blue Note Walk-Down',
+    level: 2,
+    tonality: 'minor',
+    box: 1,
+    style: 'Blues',
+    bpm: 80,
+    function: 'ending',
+    description: 'Uses the blues scale\'s b5 as a passing note between the 5th and the 4th.',
+    tips: ['The b5 (the "blue note") sounds tense — pass through it, don\'t stop on it.'],
+    notes: [
+      { s: 2, f: 0, d: 0.5 },
+      { s: 1, f: 2, d: 0.5 },
+      { s: 1, f: 1, d: 0.5 },
+      { s: 1, f: 0, d: 0.5 },
+      { s: 0, f: 3, d: 0.5 },
+      { s: 0, f: 0, d: 1.5, t: 'v' },
+    ],
+  },
+  {
+    id: 'slide-up',
+    name: 'Slide Into Box 2',
+    level: 2,
+    tonality: 'minor',
+    box: 2,
+    style: 'Blues / Rock',
+    bpm: 80,
+    function: 'middle',
+    description: 'Slide from box 1 up into box 2 — your first step beyond the first shape.',
+    tips: ['Keep pressure on the string as you slide.', 'Use your ring finger for the slide.'],
+    notes: [
+      { s: 3, f: 0, d: 0.5 },
+      { s: 3, f: 2, d: 0.5 },
+      { s: 3, f: 4, d: 0.5, t: 's' },
+      { s: 4, f: 3, d: 0.5 },
+      { s: 4, f: 5, d: 1, t: 'v' },
+      { s: 4, f: 3, d: 0.5 },
+      { s: 3, f: 4, d: 0.5 },
+    ],
+  },
+  {
+    id: 'bb-box',
+    name: 'B.B. King Box Phrase',
+    level: 3,
+    tonality: 'minor',
+    box: 0,
+    style: 'Blues',
+    bpm: 72,
+    function: 'any',
+    description: 'The famous "B.B. King box" sits between boxes 1 and 2 — root on the B string.',
+    tips: ['Lots of vibrato!', 'Less is more: a few notes with great feel beat lots of fast notes.'],
+    notes: [
+      { s: 4, f: 5, d: 1, t: 'v' },
+      { s: 5, f: 3, d: 0.5 },
+      { s: 5, f: 5, d: 1, t: 'b' },
+      { s: 5, f: 5, d: 0.5, t: 'r' },
+      { s: 5, f: 3, d: 0.5 },
+      { s: 4, f: 5, d: 2, t: 'v' },
+    ],
+  },
+  {
+    id: 'major-sweet',
+    name: 'Sweet Major Ending',
+    level: 2,
+    tonality: 'major',
+    box: 1,
+    style: 'Country / Classic rock',
+    bpm: 80,
+    function: 'ending',
+    description: 'A major pentatonic phrase that resolves to the major root — happy, "Southern rock" sound.',
+    tips: ['In major keys the "root" moves: the target here is the note 3 frets above the box-1 root.', 'Try it over Knockin\' on Heaven\'s Door or Sweet Home Alabama.'],
+    notes: [
+      { s: 3, f: 2, d: 1, t: 'b' },
+      { s: 4, f: 0, d: 0.5 },
+      { s: 4, f: 3, d: 0.5 },
+      { s: 5, f: 0, d: 0.5 },
+      { s: 5, f: 3, d: 1.5, t: 'v' },
+    ],
+  },
+  {
+    id: 'major-country',
+    name: 'Major Pentatonic Climb',
+    level: 3,
+    tonality: 'major',
+    box: 1,
+    style: 'Country',
+    bpm: 90,
+    function: 'opener',
+    description: 'Hammer-ons up through the major pentatonic, touching the major 3rd before resolving to the root — the country/Allman Brothers sound.',
+    tips: ['The major 3rd (on the B string) is what makes it sound happy.', 'Pick the first note on each string, hammer the second.'],
+    notes: [
+      { s: 2, f: 0, d: 0.5 },
+      { s: 2, f: 2, d: 0.5, t: 'h' },
+      { s: 3, f: 0, d: 0.5 },
+      { s: 3, f: 2, d: 0.5, t: 'h' },
+      { s: 4, f: 0, d: 0.5 },
+      { s: 3, f: 2, d: 0.5 },
+      { s: 3, f: 0, d: 1, t: 'v' },
+    ],
+  },
+  {
+    id: 'unison-bend',
+    name: 'Unison Bend Scream',
+    level: 3,
+    tonality: 'minor',
+    box: 1,
+    style: 'Rock',
+    bpm: 80,
+    function: 'opener',
+    description: 'Bend the B string up to match the high e — a huge, singing rock sound.',
+    tips: ['Bend the lower note until the two notes "lock in" and the wobble disappears.'],
+    notes: [
+      { s: 4, f: 3, d: 1.5, t: 'b', x: [[5, 0]] },
+      { s: 4, f: 3, d: 0.5, t: 'r' },
+      { s: 4, f: 0, d: 0.5 },
+      { s: 3, f: 2, d: 1.5, t: 'v' },
+    ],
+  },
+  {
+    id: 'call-response',
+    name: 'Call & Response Phrase',
+    level: 3,
+    tonality: 'minor',
+    box: 1,
+    style: 'Blues',
+    bpm: 80,
+    function: 'any',
+    description: 'A two-part phrase: a "question" that ends up high, then an "answer" that resolves low.',
+    tips: ['Leave a gap between the call and the response — silence is part of the solo.'],
+    notes: [
+      { s: 3, f: 0, d: 0.5 },
+      { s: 3, f: 2, d: 0.5, t: 'h' },
+      { s: 4, f: 0, d: 0.5 },
+      { s: 4, f: 3, d: 1.5, t: 'b' },
+      R(1),
+      { s: 4, f: 3, d: 0.5 },
+      { s: 4, f: 0, d: 0.5 },
+      { s: 3, f: 2, d: 0.5 },
+      { s: 3, f: 0, d: 0.5 },
+      { s: 2, f: 2, d: 2, t: 'v' },
+    ],
+  },
+  {
+    id: 'low-riff',
+    name: 'Low-String Blues Riff',
+    level: 1,
+    tonality: 'minor',
+    box: 1,
+    style: 'Blues',
+    bpm: 90,
+    function: 'opener',
+    description: 'A gritty phrase on the low strings. Also a great riff on its own.',
+    tips: ['Use your index finger for the root and ring finger for fret +2.'],
+    notes: [
+      { s: 0, f: 0, d: 0.5 },
+      { s: 0, f: 3, d: 0.5 },
+      { s: 1, f: 0, d: 0.5 },
+      { s: 1, f: 1, d: 0.25, t: 'h' },
+      { s: 1, f: 2, d: 0.25, t: 'h' },
+      { s: 2, f: 0, d: 0.5 },
+      { s: 1, f: 2, d: 0.5 },
+      { s: 0, f: 3, d: 0.5 },
+      { s: 0, f: 0, d: 0.5 },
+    ],
+  },
+];
+
+export const TECHNIQUE_LABEL: Record<Technique, string> = {
+  b: 'full bend',
+  hb: 'half bend',
+  r: 'release',
+  h: 'hammer-on',
+  p: 'pull-off',
+  s: 'slide',
+  v: 'vibrato',
+};
+
+/** Total length in beats */
+export function lickBeats(l: Lick): number {
+  return l.notes.reduce((a, n) => a + n.d, 0);
+}
