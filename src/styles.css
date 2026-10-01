@@ -1125,3 +1125,10 @@ label {
 .advice ul {
   padding-left: 20px;
 }
+
+.scale-title {
+  color: var(--accent);
+  font-size: 1.6rem;
+  text-transform: capitalize;
+  margin-top: 4px;
+}

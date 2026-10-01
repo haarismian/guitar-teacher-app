@@ -29,6 +29,19 @@ export function getContext(): AudioContext {
   return ctx;
 }
 
+/**
+ * On iPad, 'playback' pauses other apps (Spotify) when we make a sound.
+ * 'ambient' mixes with them instead (but respects the silent switch).
+ */
+export function setMixWithOtherAudio(mix: boolean) {
+  const nav = navigator as Navigator & { audioSession?: { type: string } };
+  try {
+    if (nav.audioSession) nav.audioSession.type = mix ? 'ambient' : 'playback';
+  } catch {
+    /* not supported */
+  }
+}
+
 /** Must be called from a user gesture (tap) on iOS */
 export async function unlockAudio(): Promise<AudioContext> {
   const c = getContext();

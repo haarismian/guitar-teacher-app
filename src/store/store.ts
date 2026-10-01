@@ -22,6 +22,17 @@ export interface TempoEntry {
   value: number; // bpm or changes per minute
 }
 
+export interface SoloPlan {
+  id: string;
+  name: string;
+  lickIds: string[];
+  key: string; // root note name, e.g. "G"
+  scale?: 'minorPent' | 'majorPent' | 'blues';
+  source?: 'builtin' | 'external';
+  progression?: string;
+  bpm?: number;
+}
+
 export interface AppState {
   version: 1;
   completedLessons: Record<string, string>; // lessonId -> ISO date
@@ -37,7 +48,7 @@ export interface AppState {
     weeklyGoalMinutes: number;
     guitarTone: 'acoustic' | 'electric' | 'clean';
   };
-  soloPlans: Array<{ id: string; name: string; lickIds: string[]; key: string }>;
+  soloPlans: SoloPlan[];
 }
 
 const STORAGE_KEY = 'guitar-teacher-state-v1';

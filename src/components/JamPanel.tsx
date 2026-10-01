@@ -3,6 +3,7 @@ import { STYLES, type ChartBar, type StyleId } from '../audio/player';
 import { PROGRESSIONS, buildProgressionChart, progressionKeyTonality } from '../data/progressions';
 import { chordToneClasses } from '../music/chords';
 import { ALL_KEYS, SCALES, keyShortName, mod12, noteName, parseKey, soloAdvice, usesFlats, type ScaleId } from '../music/theory';
+import { backingQuery, spotifySearchUrl, youtubeSearchUrl } from '../data/externalTracks';
 import ChartPlayer from './ChartPlayer';
 import Fretboard from './Fretboard';
 
@@ -147,6 +148,18 @@ export default function JamPanel({ initialKey = 'Am', initialProgression, initia
               </>
             )}
           </p>
+          {(scale === 'minorPent' || scale === 'majorPent' || scale === 'blues') && (
+            <p className="small">
+              Want a real band instead?{' '}
+              <a href={spotifySearchUrl(backingQuery(root, scale, flats))} target="_blank" rel="noreferrer">
+                Find a “{backingQuery(root, scale, flats)}” on Spotify ↗
+              </a>{' '}
+              ·{' '}
+              <a href={youtubeSearchUrl(backingQuery(root, scale, flats))} target="_blank" rel="noreferrer">
+                YouTube ↗
+              </a>
+            </p>
+          )}
           <ul>
             {advice.map((a) => (
               <li key={a.label}>

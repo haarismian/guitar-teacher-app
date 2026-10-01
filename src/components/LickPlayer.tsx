@@ -8,6 +8,7 @@ interface Props {
   lick: Lick;
   initialKey?: string;
   showFretboard?: boolean;
+  targetBpm?: number; // start at this tempo (e.g. to match an external backing track)
 }
 
 interface PlacedNote {
@@ -101,13 +102,13 @@ function TabView({ notes, current, beats }: { notes: PlacedNote[]; current: numb
   );
 }
 
-export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = true }: Props) {
+export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = true, targetBpm }: Props) {
   const defaultKey = lick.tonality === 'major' && /m$/.test(initialKey) ? 'G' : lick.tonality === 'minor' && !/m$/.test(initialKey) ? 'Am' : initialKey;
   const [keyStr, setKeyStr] = useState(() => {
     const k = parseKey(defaultKey);
     return k ? keyShortName(k) : defaultKey;
   });
-  const [speed, setSpeed] = useState(70);
+  const [speed, setSpeed] = useState(() => (targetBpm ? Math.max(30, Math.min(130, Math.round((targetBpm / lick.bpm) * 100))) : 70));
   const [loop, setLoop] = useState(true);
   const [clickOn, setClickOn] = useState(true);
   const [octaveDown, setOctaveDown] = useState(false);
