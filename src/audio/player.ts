@@ -222,7 +222,8 @@ export class BackingPlayer {
     return 60 / this.opts.bpm / this.style.stepsPerBeat;
   }
 
-  async start(fromBar = 0) {
+  /** startAt: optional AudioContext time to begin (to sync with other parts) */
+  async start(fromBar = 0, startAt?: number) {
     const ctx = await unlockAudio();
     if (!this.channels) {
       this.channels = {
@@ -241,7 +242,7 @@ export class BackingPlayer {
     this.bar = this.opts.loopRange ? this.opts.loopRange[0] : fromBar;
     this.step = 0;
     this.countingIn = !!this.opts.countIn;
-    this.nextTime = ctx.currentTime + 0.12;
+    this.nextTime = startAt ?? ctx.currentTime + 0.12;
     this.playing = true;
     this.timer = window.setInterval(() => this.schedule(), 25);
     this.schedule();

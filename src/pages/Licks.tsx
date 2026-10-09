@@ -6,6 +6,7 @@ import { LICKS, type Lick } from '../data/licks';
 import { PROGRESSIONS, buildProgressionChart } from '../data/progressions';
 import { setMixWithOtherAudio } from '../audio/engine';
 import Fretboard from '../components/Fretboard';
+import SoloSheet from '../components/SoloSheet';
 import { backingQuery, scaleLabel, spotifySearchUrl, youtubeSearchUrl, type SoloScale } from '../data/externalTracks';
 import { keyShortName, mod12, noteName, parseNoteName, usesFlats } from '../music/theory';
 import { deleteSoloPlan, saveSoloPlan, setLickStatus, useAppState, type LickStatus } from '../store/store';
@@ -171,6 +172,13 @@ function SoloBuilder() {
   const lickKey = (l: Lick) =>
     l.tonality === 'major' ? keyShortName({ root, tonality: 'major' }) : keyShortName({ root: scale === 'majorPent' ? mod12(root - 3) : root, tonality: 'minor' });
   const lickBpm = source === 'external' ? trackBpm ?? undefined : bpm;
+  const phrases = useMemo(
+    () => slots.map((id, i) => {
+      const lick = LICKS.find((l) => l.id === id)!;
+      return { lick, keyStr: lickKey(lick), label: `${i + 1}. ${lick.name}` };
+    }),
+    [slots, root, scale], // eslint-disable-line
+  );
 
   return (
     <div>
@@ -395,6 +403,24 @@ function SoloBuilder() {
           </div>
         );
       })}
+
+      <div className="card full-solo">
+        <span className="eyebrow">Put it all together</span>
+        <h2>Your full solo · {label}</h2>
+        <p className="muted">
+          All {slots.length} phrases in order, as one piece of tab.
+          {source === 'builtin'
+            ? ' Play it with the built-in backing track, or turn the track off and play along with your own.'
+            : ' Start your Spotify track, then play along — tap the track tempo above so it plays at the same speed.'}
+        </p>
+        <SoloSheet
+          phrases={phrases}
+          bpm={source === 'external' ? trackBpm ?? 80 : bpm}
+          root={root}
+          scale={scale}
+          backing={source === 'builtin' ? { bars, style: prog.defaultStyle } : null}
+        />
+      </div>
     </div>
   );
 }

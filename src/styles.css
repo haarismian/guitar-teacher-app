@@ -1132,3 +1132,42 @@ label {
   text-transform: capitalize;
   margin-top: 4px;
 }
+
+/* ---------- Full solo sheet ---------- */
+.full-solo {
+  border-color: var(--accent);
+}
+.solo-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+.solo-row {
+  border-radius: 10px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+}
+.solo-row .tab-wrap {
+  margin: 0;
+}
+.solo-row.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.solo-rest {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.tab-phrase {
+  fill: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+.tab-barnum {
+  fill: var(--muted);
+  font-size: 10px;
+}

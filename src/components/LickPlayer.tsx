@@ -11,7 +11,7 @@ interface Props {
   targetBpm?: number; // start at this tempo (e.g. to match an external backing track)
 }
 
-interface PlacedNote {
+export interface PlacedNote {
   s: number;
   fret: number;
   start: number; // beats
@@ -34,17 +34,34 @@ export function placeLick(lick: Lick, key: Key, octaveDown = false): { notes: Pl
   return { notes, rootFret: r };
 }
 
-function TabView({ notes, current, beats }: { notes: PlacedNote[]; current: number; beats: number }) {
+export interface TabLabel {
+  beat: number;
+  text: string;
+}
+
+interface TabViewProps {
+  notes: PlacedNote[];
+  current: number; // index into notes, -1 for none
+  beats: number;
+  minBeats?: number; // draw at least this many beats (keeps rows equal width)
+  labels?: TabLabel[]; // text above the staff (e.g. phrase names)
+  firstBar?: number; // bar number of the first bar (shows bar numbers when set)
+  fit?: boolean; // scale to the container width instead of a fixed zoom
+}
+
+export function TabView({ notes, current, beats, minBeats = 0, labels, firstBar, fit }: TabViewProps) {
   const pxBeat = 64;
   const left = 26;
   const gap = 18;
-  const top = 26;
-  const width = left + Math.ceil(beats) * pxBeat + 20;
+  const top = labels || firstBar !== undefined ? 50 : 26;
+  const totalBeats = Math.max(Math.ceil(beats), minBeats);
+  const width = left + totalBeats * pxBeat + 20;
   const height = top + gap * 5 + 20;
   const y = (s: number) => top + (5 - s) * gap;
+  const sizeProps = fit ? { style: { width: '100%', maxWidth: width * 1.7, height: 'auto' } } : { width: width * 1.7, height: height * 1.7 };
   return (
     <div className="tab-wrap">
-      <svg className="tab" viewBox={`0 0 ${width} ${height}`} width={width * 1.7} height={height * 1.7}>
+      <svg className="tab" viewBox={`0 0 ${width} ${height}`} {...sizeProps}>
         {['e', 'B', 'G', 'D', 'A', 'E'].map((n, i) => (
           <g key={n + i}>
             <text x={6} y={top + i * gap} dy="0.35em" className="tab-str">
@@ -53,7 +70,7 @@ function TabView({ notes, current, beats }: { notes: PlacedNote[]; current: numb
             <line x1={left - 4} x2={width - 10} y1={top + i * gap} y2={top + i * gap} className="tab-line" />
           </g>
         ))}
-        {Array.from({ length: Math.ceil(beats) + 1 }, (_, b) => (
+        {Array.from({ length: totalBeats + 1 }, (_, b) => (
           <line
             key={b}
             x1={left + b * pxBeat}
@@ -62,6 +79,17 @@ function TabView({ notes, current, beats }: { notes: PlacedNote[]; current: numb
             y2={top + gap * 5}
             className={b % 4 === 0 ? 'tab-bar' : 'tab-beat'}
           />
+        ))}
+        {firstBar !== undefined &&
+          Array.from({ length: Math.ceil(totalBeats / 4) }, (_, b) => (
+            <text key={`bn${b}`} x={left + b * 4 * pxBeat + 3} y={top - 26} className="tab-barnum">
+              {firstBar + b}
+            </text>
+          ))}
+        {labels?.map((l, i) => (
+          <text key={`lb${i}`} x={left + l.beat * pxBeat + 16} y={top - 26} className="tab-phrase">
+            {l.text}
+          </text>
         ))}
         {notes.map((n, i) => {
           if (n.rest) return null;
@@ -102,6 +130,38 @@ function TabView({ notes, current, beats }: { notes: PlacedNote[]; current: numb
   );
 }
 
+/**
+ * Schedule a list of placed notes on the audio clock. onNote(i) fires (via setTimeout)
+ * as each note sounds; the returned timer ids let the caller cancel the highlights.
+ */
+export function scheduleNotes(notes: PlacedNote[], t0: number, spb: number, onNote: (i: number) => void): number[] {
+  const ctx = getContext();
+  const timers: number[] = [];
+  let prevMidi: number | null = null;
+  notes.forEach((n, i) => {
+    const when = t0 + n.start * spb;
+    const dur = n.d * spb;
+    timers.push(window.setTimeout(() => onNote(i), Math.max(0, (when - ctx.currentTime) * 1000)));
+    if (n.rest) return;
+    const midi = STANDARD_TUNING[n.s] + n.fret;
+    const legato = n.t === 'h' || n.t === 'p' || n.t === 's' || n.t === 'r';
+    playPluck(midi, when, {
+      tone: 'electric',
+      gain: legato ? 0.28 : 0.38,
+      duration: dur + 0.05,
+      bendSemis: n.t === 'b' ? 2 : n.t === 'hb' ? 1 : undefined,
+      bendFrom: n.t === 'r' ? 2 : undefined,
+      bendTime: Math.min(0.22, dur * 0.5),
+      // only slide from a note that's close by (not from the previous phrase)
+      slideFrom: n.t === 's' && prevMidi !== null && Math.abs(prevMidi - midi) <= 5 ? prevMidi - midi : undefined,
+      vibrato: n.t === 'v',
+    });
+    n.extra.forEach((e) => playPluck(STANDARD_TUNING[e.s] + e.fret, when, { tone: 'electric', gain: 0.3, duration: dur + 0.05 }));
+    prevMidi = midi;
+  });
+  return timers;
+}
+
 export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = true, targetBpm }: Props) {
   const defaultKey = lick.tonality === 'major' && /m$/.test(initialKey) ? 'G' : lick.tonality === 'minor' && !/m$/.test(initialKey) ? 'Am' : initialKey;
   const [keyStr, setKeyStr] = useState(() => {
@@ -134,33 +194,10 @@ export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = tr
   };
 
   const scheduleOnce = (t0: number) => {
-    const ctx = getContext();
     const spb = 60 / bpm;
     const barBeats = Math.max(4, Math.ceil(beats / 4) * 4);
     if (clickOn) for (let b = 0; b < barBeats; b++) click(t0 + b * spb, b % 4 === 0, 0.4);
-    let prevMidi: number | null = null;
-    notes.forEach((n, i) => {
-      const when = t0 + n.start * spb;
-      const dur = n.d * spb;
-      const ms = Math.max(0, (when - ctx.currentTime) * 1000);
-      timers.current.push(window.setTimeout(() => setCurrent(i), ms));
-      if (n.rest) return;
-      const midi = STANDARD_TUNING[n.s] + n.fret;
-      const legato = n.t === 'h' || n.t === 'p' || n.t === 's' || n.t === 'r';
-      const bendTime = Math.min(0.22, dur * 0.5);
-      playPluck(midi, when, {
-        tone: 'electric',
-        gain: legato ? 0.28 : 0.38,
-        duration: dur + 0.05,
-        bendSemis: n.t === 'b' ? 2 : n.t === 'hb' ? 1 : undefined,
-        bendFrom: n.t === 'r' ? 2 : undefined,
-        bendTime,
-        slideFrom: n.t === 's' && prevMidi !== null ? prevMidi - midi : undefined,
-        vibrato: n.t === 'v',
-      });
-      n.extra.forEach((e) => playPluck(STANDARD_TUNING[e.s] + e.fret, when, { tone: 'electric', gain: 0.3, duration: dur + 0.05 }));
-      prevMidi = midi;
-    });
+    timers.current.push(...scheduleNotes(notes, t0, spb, setCurrent));
     return barBeats * spb;
   };
 
