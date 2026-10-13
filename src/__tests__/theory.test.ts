@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { parseChart } from '../audio/player';
 import { chordMidiNotes, voicingFor } from '../music/chords';
 import { detectKey, keyShortName, parseChord, pentatonicBox, transposeChordSymbol, STANDARD_TUNING, mod12 } from '../music/theory';
-import { LICKS } from '../data/licks';
+import { LICKS, VIBES, VIBE_IDS, surpriseSolo } from '../data/licks';
+import { PROGRESSIONS } from '../data/progressions';
 import { SONGS } from '../data/songs';
 import { ALL_LESSONS } from '../data/curriculum';
 import { buildSession } from '../data/sessionPlanner';
@@ -78,6 +79,30 @@ describe('licks', () => {
       for (const n of notes) {
         const semis = n.t === 'b' || n.t === 'bv' || n.t === 'pb' ? 2 : n.t === 'hb' ? 1 : 0;
         if (semis) expect(targets, `${lick.id} bend`).toContain(mod12(STANDARD_TUNING[n.s] + n.fret + semis));
+      }
+    }
+  });
+  it('every lick has a vibe, and every vibe has licks and real backing tracks', () => {
+    for (const l of LICKS) expect(l.vibes.length, l.id).toBeGreaterThan(0);
+    for (const v of VIBE_IDS) {
+      expect(LICKS.filter((l) => l.vibes.includes(v)).length, v).toBeGreaterThanOrEqual(6);
+      for (const id of Object.values(VIBES[v].backing)) expect(PROGRESSIONS.some((p) => p.id === id), id).toBe(true);
+    }
+  });
+  it('surprise solos stick to the chosen vibe and resolve in major keys', () => {
+    const minorPool = LICKS.filter((l) => l.tonality === 'minor');
+    const majorPool = [...LICKS.filter((l) => l.tonality === 'major'), ...minorPool];
+    for (let seed = 0; seed < 20; seed++) {
+      let x = seed + 1;
+      const random = () => ((x = (x * 9301 + 49297) % 233280) / 233280);
+      for (const v of VIBE_IDS) {
+        const major = surpriseSolo(majorPool, 4, { vibe: v, majorEnding: true, random });
+        expect(new Set(major).size).toBe(4);
+        expect(LICKS.find((l) => l.id === major[3])!.tonality).toBe('major');
+        for (const id of major) expect(LICKS.find((l) => l.id === id)!.vibes, `${v} ${id}`).toContain(v);
+        if (v === 'sweet') continue; // sweet licks are all major
+        const minor = surpriseSolo(minorPool, 3, { vibe: v, random });
+        for (const id of minor) expect(LICKS.find((l) => l.id === id)!.vibes, `${v} ${id}`).toContain(v);
       }
     }
   });

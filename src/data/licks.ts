@@ -27,8 +27,59 @@ export interface Lick {
   description: string;
   tips: string[];
   function: 'opener' | 'middle' | 'ending' | 'any';
-  soulful?: boolean; // slow, spacious, vocal-style phrase (soul / R&B / ballads)
+  vibes: Vibe[]; // the feel(s) this lick fits — first one is the main vibe
 }
+
+export type Vibe = 'soulful' | 'bluesy' | 'rock' | 'sweet' | 'smooth';
+
+export interface VibeInfo {
+  label: string;
+  short: string; // badge text
+  emoji: string;
+  description: string;
+  // suggested built-in backing progression for each kind of scale
+  backing: { minor: string; major: string; blues: string };
+}
+
+export const VIBES: Record<Vibe, VibeInfo> = {
+  soulful: {
+    short: 'Soulful',
+    label: 'Slow & soulful',
+    emoji: '🌙',
+    description: 'Slow, vocal phrases with lots of space and long, held bends — made for soul-pop and R&B ballads. Play softly and let every note ring.',
+    backing: { minor: 'soul-ballad', major: 'soul-ballad-major', blues: 'soul-ballad' },
+  },
+  bluesy: {
+    short: 'Bluesy',
+    label: 'Gritty blues',
+    emoji: '🥃',
+    description: 'Curls, blue notes and B.B. King-style phrases. Bend the b3, lean on the b5, and always finish with vibrato.',
+    backing: { minor: 'minor-blues', major: 'blues12', blues: 'blues12' },
+  },
+  rock: {
+    short: 'Rock',
+    label: 'Rock & fiery',
+    emoji: '🔥',
+    description: 'Big bends, triplet runs and screaming high notes. Dig in with the pick.',
+    backing: { minor: 'aeolian-rock', major: 'mixolydian', blues: 'aeolian-rock' },
+  },
+  sweet: {
+    short: 'Sweet',
+    label: 'Sweet & bright',
+    emoji: '☀️',
+    description: 'Happy major-key phrases — country, pop and Southern-rock sweetness. Resolve to the major root.',
+    backing: { minor: 'minor-pop', major: 'pop-axis', blues: 'blues12' },
+  },
+  smooth: {
+    short: 'Smooth',
+    label: 'Smooth & groovy',
+    emoji: '🎷',
+    description: 'Neo-soul and R&B: legato hammer-ons, slides, pre-bends and warm double-stops. Keep it light and in the pocket.',
+    backing: { minor: 'minor-vamp', major: 'soul-ballad-major', blues: 'minor-vamp' },
+  },
+};
+
+export const VIBE_IDS = Object.keys(VIBES) as Vibe[];
 
 const R = (d: number): LickNote => ({ s: 0, f: 0, d, rest: true });
 
@@ -42,6 +93,7 @@ export const LICKS: Lick[] = [
     style: 'Rock / Blues',
     bpm: 80,
     function: 'ending',
+    vibes: ['rock'],
     description: 'The first "lick" every guitarist learns: run down the top of box 1 and land on the root.',
     tips: ['Alternate pick: down-up-down-up.', 'Land on the root with vibrato for a strong ending.'],
     notes: [
@@ -63,6 +115,7 @@ export const LICKS: Lick[] = [
     style: 'Blues',
     bpm: 70,
     function: 'ending',
+    vibes: ['bluesy'],
     description: 'Bend the 4th up to the 5th, release, then walk down to the root.',
     tips: ['Use your ring finger for the bend, with middle and index fingers behind it pushing too.', 'Check your bend: it should sound like the note two frets higher.'],
     notes: [
@@ -81,6 +134,7 @@ export const LICKS: Lick[] = [
     style: 'Rock',
     bpm: 80,
     function: 'opener',
+    vibes: ['rock'],
     description: 'Bend on the G string, then hit the B and high e root. Heard in a thousand solos.',
     tips: ['Mute the strings you are not playing with the palm of your picking hand.'],
     notes: [
@@ -99,6 +153,7 @@ export const LICKS: Lick[] = [
     style: 'Rock',
     bpm: 80,
     function: 'opener',
+    vibes: ['rock'],
     description: 'Climb up through box 1 with hammer-ons. Builds left-hand strength and smoothness.',
     tips: ['Pick only the first note on each string; hammer the second.', 'Hammer with the fingertip, close to the fret.'],
     notes: [
@@ -120,6 +175,7 @@ export const LICKS: Lick[] = [
     style: 'Rock',
     bpm: 90,
     function: 'middle',
+    vibes: ['rock'],
     description: 'Triplet pull-offs on the top strings — the "Jimmy Page" fast sound.',
     tips: ['Start slow! Each group of three is one beat.', 'Pull the finger slightly downward to "pluck" the lower note.'],
     notes: [
@@ -144,6 +200,7 @@ export const LICKS: Lick[] = [
     style: 'Rock',
     bpm: 85,
     function: 'middle',
+    vibes: ['rock'],
     description: 'A three-note loop that builds tension. Repeat it and then resolve.',
     tips: ['Keep it even: "tri-pl-et, tri-pl-et".', 'Great way to build excitement before a big bend.'],
     notes: [
@@ -168,6 +225,7 @@ export const LICKS: Lick[] = [
     style: 'Rock & Roll',
     bpm: 110,
     function: 'opener',
+    vibes: ['rock'],
     description: 'Two notes at once with one finger barred across the B and e strings. Instant rock & roll.',
     tips: ['Flatten your index or ring finger across both strings.', 'Pick with short, sharp strokes.'],
     notes: [
@@ -189,6 +247,7 @@ export const LICKS: Lick[] = [
     style: 'Blues',
     bpm: 80,
     function: 'ending',
+    vibes: ['bluesy'],
     description: 'Uses the blues scale\'s b5 as a passing note between the 5th and the 4th.',
     tips: ['The b5 (the "blue note") sounds tense — pass through it, don\'t stop on it.'],
     notes: [
@@ -209,6 +268,7 @@ export const LICKS: Lick[] = [
     style: 'Blues / Rock',
     bpm: 80,
     function: 'middle',
+    vibes: ['bluesy', 'rock'],
     description: 'Slide from box 1 up into box 2 — your first step beyond the first shape.',
     tips: ['Keep pressure on the string as you slide.', 'Use your ring finger for the slide.'],
     notes: [
@@ -230,6 +290,7 @@ export const LICKS: Lick[] = [
     style: 'Blues',
     bpm: 72,
     function: 'any',
+    vibes: ['bluesy', 'soulful'],
     description: 'The famous "B.B. King box" sits between boxes 1 and 2 — root on the B string.',
     tips: ['Lots of vibrato!', 'Less is more: a few notes with great feel beat lots of fast notes.'],
     notes: [
@@ -250,6 +311,7 @@ export const LICKS: Lick[] = [
     style: 'Country / Classic rock',
     bpm: 80,
     function: 'ending',
+    vibes: ['sweet'],
     description: 'A major pentatonic phrase that resolves to the major root — happy, "Southern rock" sound.',
     tips: ['In major keys the "root" moves: the target here is the note 3 frets above the box-1 root.', 'Try it over Knockin\' on Heaven\'s Door or Sweet Home Alabama.'],
     notes: [
@@ -269,6 +331,7 @@ export const LICKS: Lick[] = [
     style: 'Country',
     bpm: 90,
     function: 'opener',
+    vibes: ['sweet'],
     description: 'Hammer-ons up through the major pentatonic, touching the major 3rd before resolving to the root — the country/Allman Brothers sound.',
     tips: ['The major 3rd (on the B string) is what makes it sound happy.', 'Pick the first note on each string, hammer the second.'],
     notes: [
@@ -290,6 +353,7 @@ export const LICKS: Lick[] = [
     style: 'Rock',
     bpm: 80,
     function: 'opener',
+    vibes: ['rock'],
     description: 'Bend the B string up to match the high e — a huge, singing rock sound.',
     tips: ['Bend the lower note until the two notes "lock in" and the wobble disappears.'],
     notes: [
@@ -308,6 +372,7 @@ export const LICKS: Lick[] = [
     style: 'Blues',
     bpm: 80,
     function: 'any',
+    vibes: ['bluesy'],
     description: 'A two-part phrase: a "question" that ends up high, then an "answer" that resolves low.',
     tips: ['Leave a gap between the call and the response — silence is part of the solo.'],
     notes: [
@@ -332,6 +397,7 @@ export const LICKS: Lick[] = [
     style: 'Blues',
     bpm: 90,
     function: 'opener',
+    vibes: ['bluesy'],
     description: 'A gritty phrase on the low strings. Also a great riff on its own.',
     tips: ['Use your index finger for the root and ring finger for fret +2.'],
     notes: [
@@ -355,7 +421,7 @@ export const LICKS: Lick[] = [
     style: "Soul ballad",
     bpm: 66,
     function: 'ending',
-    soulful: true,
+    vibes: ['soulful'],
     description: "One slow bend held with vibrato, a gentle release, then a sigh down to the root. Space is the point — this is the sound of slow soul-pop (think Charlotte Cardin's \"Romeo\" or \"Sad Girl\").",
     tips: ["Bend with your ring finger, with middle and index fingers behind it helping push.", "Reach the target pitch first, THEN add vibrato — bend, settle, shake.", "Let the last note ring for its full length. Don't rush to fill the silence."],
     notes: [
@@ -375,7 +441,7 @@ export const LICKS: Lick[] = [
     style: "Soul pop",
     bpm: 64,
     function: 'any',
-    soulful: true,
+    vibes: ['soulful'],
     description: "Wait a beat, step in with two quiet notes, then sing a long bend. Works over almost any slow minor song.",
     tips: ["Starting after a rest makes it sound like a singer taking a breath.", "Pick softly — slow songs want a lighter touch than rock."],
     notes: [
@@ -397,7 +463,7 @@ export const LICKS: Lick[] = [
     style: "R&B",
     bpm: 64,
     function: 'middle',
-    soulful: true,
+    vibes: ['soulful', 'smooth'],
     description: "Bend the string BEFORE you pick it, then pick and slowly let it down. It sounds like a voice falling — very R&B.",
     tips: ["Silently bend the B string up a whole step (fret the note and push without picking).", "Pick, then release slowly over the full beat and a half.", "Practise pitching the pre-bend: compare it to the note two frets higher."],
     notes: [
@@ -416,7 +482,7 @@ export const LICKS: Lick[] = [
     style: "Slow blues / Soul",
     bpm: 62,
     function: 'any',
-    soulful: true,
+    vibes: ['soulful', 'bluesy'],
     description: "Climb into a long, held bend in the B.B. King box, then fall back to the root on the B string.",
     tips: ["Hold the bend for over two beats — keep your wrist turning, not your fingers pushing.", "Vibrato on a bend = release slightly and re-bend, rhythmically."],
     notes: [
@@ -437,7 +503,7 @@ export const LICKS: Lick[] = [
     style: "Soul",
     bpm: 68,
     function: 'middle',
-    soulful: true,
+    vibes: ['soulful', 'bluesy'],
     description: "A tiny quarter-bend \"curl\" on the minor 3rd — the bluesy, slightly sour bend that makes a phrase sound human.",
     tips: ["A quarter bend is barely a nudge: push the string just enough to sound \"between\" two notes.", "Leave the rest in the middle: question… answer."],
     notes: [
@@ -459,7 +525,7 @@ export const LICKS: Lick[] = [
     style: "R&B / Neo-soul",
     bpm: 70,
     function: 'opener',
-    soulful: true,
+    vibes: ['soulful', 'smooth'],
     description: "Bend the root up a whole step to the 9th — the dreamy, modern R&B colour — then release and float down.",
     tips: ["The 9th is not in the pentatonic scale, which is exactly why it sounds fresh. Release back to the root so it resolves.", "Great over slow minor chords like Am7 or Dm7."],
     notes: [
@@ -480,7 +546,7 @@ export const LICKS: Lick[] = [
     style: "Rock ballad",
     bpm: 70,
     function: 'opener',
-    soulful: true,
+    vibes: ['soulful', 'rock'],
     description: "A singing bend on the high e string, then a second bend on the G string that answers it an octave lower.",
     tips: ["On the high e, push the string up toward the ceiling.", "Two phrases, one idea: high bend, then low bend."],
     notes: [
@@ -503,7 +569,7 @@ export const LICKS: Lick[] = [
     style: "Soul pop",
     bpm: 70,
     function: 'any',
-    soulful: true,
+    vibes: ['soulful'],
     description: "The \"call\" bends up and stops. The \"answer\" uses a pre-bend that falls back down and comes home to the root.",
     tips: ["Same string, same fret — the call bends up, the answer comes down.", "Count the rest out loud: it's part of the phrase."],
     notes: [
@@ -525,7 +591,7 @@ export const LICKS: Lick[] = [
     style: "R&B",
     bpm: 66,
     function: 'ending',
-    soulful: true,
+    vibes: ['soulful', 'smooth'],
     description: "Three pre-bends in a row, each one falling down a string. A slow, weeping cascade to the root.",
     tips: ["Every \"pb\" note is bent before you pick it — check the pitch with your ear each time.", "Release slowly; the fall is the expressive part."],
     notes: [
@@ -548,7 +614,7 @@ export const LICKS: Lick[] = [
     style: "Soul",
     bpm: 60,
     function: 'ending',
-    soulful: true,
+    vibes: ['soulful'],
     description: "A pre-bent note on the high e drops slowly, then resolves to the root on the B string. Short and heartbreaking.",
     tips: ["Very slow tempo: let each note breathe.", "Finish with wide, slow vibrato on the root."],
     notes: [
@@ -566,7 +632,7 @@ export const LICKS: Lick[] = [
     style: "Pop / Rock ballad",
     bpm: 64,
     function: 'ending',
-    soulful: true,
+    vibes: ['soulful'],
     description: "Bend the b7 up to the root and hold it, then let it down and finish on the high root.",
     tips: ["A full bend from the b7 lands exactly on the root — the most satisfying bend there is.", "Hold the final note until the bar ends."],
     notes: [
@@ -587,7 +653,7 @@ export const LICKS: Lick[] = [
     style: "Slow blues",
     bpm: 60,
     function: 'opener',
-    soulful: true,
+    vibes: ['bluesy', 'soulful'],
     description: "Start your solo with a held bend from the b7 to the root, then walk down to the root on the D string.",
     tips: ["Bend on beat 1 and hold for three full beats — make the audience wait.", "Keep the bend in tune: it should match the root on the high e."],
     notes: [
@@ -608,7 +674,7 @@ export const LICKS: Lick[] = [
     style: "Rock ballad",
     bpm: 66,
     function: 'middle',
-    soulful: true,
+    vibes: ['soulful', 'rock'],
     description: "Bend up, let it down, bend up again — the double bend that guitarists use to \"cry\" on one note.",
     tips: ["Pick the second bend again, then release and walk down.", "Both bends must hit the same pitch."],
     notes: [
@@ -630,7 +696,7 @@ export const LICKS: Lick[] = [
     style: "R&B",
     bpm: 70,
     function: 'middle',
-    soulful: true,
+    vibes: ['soulful', 'smooth'],
     description: "A quick three-note pickup launches a long singing bend on the high e, then the phrase winds back down.",
     tips: ["The triplet is just one beat — the bend is the star.", "Aim the bend: minor 3rd up to the 4th."],
     notes: [
@@ -655,7 +721,7 @@ export const LICKS: Lick[] = [
     style: "Neo-soul / R&B",
     bpm: 72,
     function: 'middle',
-    soulful: true,
+    vibes: ['smooth', 'soulful'],
     description: "Smooth hammer-ons roll up to a bend on the G string. Legato and vocal.",
     tips: ["Pick only the first note on each string.", "Keep the volume of the hammer-ons equal to the picked notes."],
     notes: [
@@ -679,7 +745,7 @@ export const LICKS: Lick[] = [
     style: "Soul",
     bpm: 70,
     function: 'any',
-    soulful: true,
+    vibes: ['soulful'],
     description: "Play a bend up high, wait, then echo the same idea an octave lower. Repetition makes a solo sound like a song.",
     tips: ["The high bend is on the B string; the echo is on the D string.", "Bends on the D string need more push — use three fingers."],
     notes: [
@@ -702,7 +768,7 @@ export const LICKS: Lick[] = [
     style: "Soul / R&B",
     bpm: 80,
     function: 'middle',
-    soulful: true,
+    vibes: ['smooth'],
     description: "Two-note shapes on the G and B strings — the warm \"Curtis Mayfield\" sound behind a lot of soul guitar.",
     tips: ["Play both notes with one pick stroke.", "Keep it light and short; these are little answers, not a lead."],
     notes: [
@@ -723,7 +789,7 @@ export const LICKS: Lick[] = [
     style: "Rock ballad",
     bpm: 70,
     function: 'middle',
-    soulful: true,
+    vibes: ['soulful', 'rock'],
     description: "Hammer up into box 2 and bend the root up to the 9th, then drop back to the 5th.",
     tips: ["Box 2 sits just above box 1 — your index finger is on the b3 fret.", "Hold the 5th at the end; it leaves the phrase open."],
     notes: [
@@ -746,7 +812,7 @@ export const LICKS: Lick[] = [
     style: "Rock ballad",
     bpm: 66,
     function: 'opener',
-    soulful: true,
+    vibes: ['soulful', 'rock'],
     description: "High up the neck in box 4, a long held bend on the B string — big, emotional, stadium-ballad sound.",
     tips: ["Box 4 starts 7 frets above the root fret.", "Up high the strings bend easier — don't overshoot."],
     notes: [
@@ -767,7 +833,7 @@ export const LICKS: Lick[] = [
     style: "Soul",
     bpm: 70,
     function: 'ending',
-    soulful: true,
+    vibes: ['soulful'],
     description: "Box 5 sits just below box 1. Bend the 4th to the 5th on the B string and fall to the root on the G string.",
     tips: ["If the root fret is low, the last note may be an open string — that's fine.", "Try the \"Octave down\" button in high keys."],
     notes: [
@@ -787,7 +853,7 @@ export const LICKS: Lick[] = [
     style: "Rock ballad",
     bpm: 68,
     function: 'opener',
-    soulful: true,
+    vibes: ['rock'],
     description: "Bend the G string up to match the B string's note while both ring. A thick, shimmering bend.",
     tips: ["Fret the B string note with your index finger, bend the G string with your ring finger.", "Bend until the two notes stop \"beating\" against each other."],
     notes: [
@@ -806,6 +872,7 @@ export const LICKS: Lick[] = [
     style: "Blues",
     bpm: 72,
     function: 'middle',
+    vibes: ['bluesy'],
     description: "Half-bend the 4th up to the bluesy b5, release, and resolve. Tension and release in one string.",
     tips: ["A half bend = one fret's worth of pitch. It's easy to overshoot, so go slowly.", "The b5 is the \"blue note\" — don't stay on it."],
     notes: [
@@ -825,6 +892,7 @@ export const LICKS: Lick[] = [
     style: "Blues",
     bpm: 76,
     function: 'middle',
+    vibes: ['bluesy'],
     description: "Quarter-bend curls on the minor 3rd, repeated. The b3 \"between major and minor\" sound of every blues player.",
     tips: ["Curl the b3 slightly sharp — it should never reach the next note.", "Keep the rhythm steady and swing a little."],
     notes: [
@@ -846,6 +914,7 @@ export const LICKS: Lick[] = [
     style: "Blues rock",
     bpm: 72,
     function: 'ending',
+    vibes: ['bluesy', 'rock'],
     description: "A bend on the A string — deep and gritty — before landing on the low root.",
     tips: ["Pull low strings DOWN toward the floor instead of pushing up.", "Mute the higher strings with your fretting hand."],
     notes: [
@@ -864,6 +933,7 @@ export const LICKS: Lick[] = [
     style: "Rock",
     bpm: 76,
     function: 'middle',
+    vibes: ['rock'],
     description: "A bend on three strings in a row, climbing up — then a run back down. Great bend-accuracy workout.",
     tips: ["G string: 4th to 5th. B string: b7 to root. High e: b3 to 4th.", "Record yourself and check each bend lands in tune."],
     notes: [
@@ -888,6 +958,7 @@ export const LICKS: Lick[] = [
     style: "Rock",
     bpm: 80,
     function: 'ending',
+    vibes: ['rock'],
     description: "Quick bends on each string as you come down the box. Fast and fiery.",
     tips: ["Each bend is only half a beat — snap it up quickly.", "Practise at 60% speed until every bend is in tune."],
     notes: [
@@ -909,7 +980,7 @@ export const LICKS: Lick[] = [
     style: "Blues / Soul",
     bpm: 72,
     function: 'middle',
-    soulful: true,
+    vibes: ['bluesy', 'soulful'],
     description: "Slide up into the bend note and bend it — a smooth, vocal way into a bend.",
     tips: ["Slide with the ring finger, then keep it there for the bend.", "Let the last root ring."],
     notes: [
@@ -931,7 +1002,7 @@ export const LICKS: Lick[] = [
     style: "Blues / Soul",
     bpm: 70,
     function: 'any',
-    soulful: true,
+    vibes: ['bluesy', 'soulful'],
     description: "Slide from box 1 up into the B.B. King box, bend on the high e and settle on the root.",
     tips: ["The slide on the B string moves you from box 1 to the B.B. box in one motion.", "Vibrato on every long note."],
     notes: [
@@ -955,6 +1026,7 @@ export const LICKS: Lick[] = [
     style: "Rock",
     bpm: 80,
     function: 'middle',
+    vibes: ['rock'],
     description: "Hammer and climb through box 3 into a bend on the B string.",
     tips: ["Box 3 starts on the 4th: 5 frets above the root fret.", "Slow it down — this one moves."],
     notes: [
@@ -978,6 +1050,7 @@ export const LICKS: Lick[] = [
     style: "Rock",
     bpm: 84,
     function: 'opener',
+    vibes: ['rock'],
     description: "A screaming high-e bend from the b7 to the root, then a second bend on the B string.",
     tips: ["Up here the frets are close together — use fingers 1 and 3.", "Big vibrato at the end."],
     notes: [
@@ -1000,7 +1073,7 @@ export const LICKS: Lick[] = [
     style: "Rock ballad",
     bpm: 66,
     function: 'opener',
-    soulful: true,
+    vibes: ['rock', 'soulful'],
     description: "A unison bend high on the neck: bend the B string to match the high e. Huge and singing.",
     tips: ["Fret the high e with your index finger, bend the B string with your ring finger.", "Hold until the two strings sound like one big note."],
     notes: [
@@ -1019,6 +1092,7 @@ export const LICKS: Lick[] = [
     style: "Rock",
     bpm: 90,
     function: 'middle',
+    vibes: ['rock'],
     description: "A descending sequence in triplets — a classic way to sound fast and flowing.",
     tips: ["Each triplet starts one note lower than the last.", "Alternate pick and accent the first note of each group."],
     notes: [
@@ -1047,7 +1121,7 @@ export const LICKS: Lick[] = [
     style: "Neo-soul",
     bpm: 76,
     function: 'middle',
-    soulful: true,
+    vibes: ['smooth', 'soulful'],
     description: "Hammer-on, pull-off, then slide up into box 2 and back. Smooth and modern.",
     tips: ["Very little picking — let the left hand do the work.", "Slides should be quick and quiet."],
     notes: [
@@ -1071,7 +1145,7 @@ export const LICKS: Lick[] = [
     style: "Soul / Pop",
     bpm: 72,
     function: 'ending',
-    soulful: true,
+    vibes: ['sweet', 'soulful'],
     description: "Bend the 5th up to the 6th in a major key — sweet and hopeful — then step down to the root.",
     tips: ["The bend is on the B string with your ring finger.", "Resolve to the major root on the G string (3 frets above the minor box root fret)."],
     notes: [
@@ -1092,7 +1166,7 @@ export const LICKS: Lick[] = [
     style: "Pop ballad",
     bpm: 68,
     function: 'ending',
-    soulful: true,
+    vibes: ['sweet', 'soulful'],
     description: "Bend the 2nd up to the major 3rd, release, and land on the root. The bread-and-butter major ballad ending.",
     tips: ["Bend on the G string: it should match the B-string note next to it.", "Hold the root with slow vibrato."],
     notes: [
@@ -1113,7 +1187,7 @@ export const LICKS: Lick[] = [
     style: "Soul ballad",
     bpm: 66,
     function: 'middle',
-    soulful: true,
+    vibes: ['sweet', 'soulful'],
     description: "Lean the major 3rd up a half step to the 4th and back — a gentle, gospel-ish \"ache\".",
     tips: ["Half bends are subtle. Go up just one fret's worth.", "Great over the IV chord."],
     notes: [
@@ -1132,7 +1206,7 @@ export const LICKS: Lick[] = [
     style: "R&B / Gospel",
     bpm: 70,
     function: 'any',
-    soulful: true,
+    vibes: ['sweet', 'smooth'],
     description: "Two bends in a row, each falling into the next — the uplifting gospel/R&B major sound.",
     tips: ["First bend: 5th to 6th on the B string. Second bend: 2nd to 3rd on the G string.", "Keep both bends in tune; record yourself to check."],
     notes: [
@@ -1156,7 +1230,7 @@ export const LICKS: Lick[] = [
     style: "Pop / Soul",
     bpm: 72,
     function: 'opener',
-    soulful: true,
+    vibes: ['sweet'],
     description: "In box 2, bend the high e from the 2nd to the major 3rd, release, and land on the root.",
     tips: ["Box 2 of major pentatonic = box 2 of the relative minor.", "A big, bright opener."],
     notes: [
@@ -1175,7 +1249,7 @@ export const LICKS: Lick[] = [
     style: "Soul pop",
     bpm: 70,
     function: 'opener',
-    soulful: true,
+    vibes: ['sweet', 'soulful'],
     description: "Hammer, slide up and sing a long held bend on the high e, then settle on the root.",
     tips: ["Hold the bend with vibrato for two beats — think of a singer holding a word."],
     notes: [
@@ -1197,7 +1271,7 @@ export const LICKS: Lick[] = [
     style: "Soul",
     bpm: 64,
     function: 'ending',
-    soulful: true,
+    vibes: ['sweet', 'soulful'],
     description: "Two pre-bends that fall like a sung melody: 6th down to 5th, 3rd down to 2nd, then home.",
     tips: ["Bend before picking, then release slowly.", "Sing the melody first — then make the guitar sing it."],
     notes: [
@@ -1216,7 +1290,7 @@ export const LICKS: Lick[] = [
     style: "Country / Soul",
     bpm: 80,
     function: 'any',
-    soulful: true,
+    vibes: ['sweet'],
     description: "Bend the G string while the B string rings above it, then resolve to a sweet two-note shape.",
     tips: ["Fret the B-string note with your pinky or ring finger while bending with the other.", "Let both notes ring together."],
     notes: [
@@ -1234,7 +1308,7 @@ export const LICKS: Lick[] = [
     style: "Soul",
     bpm: 84,
     function: 'opener',
-    soulful: true,
+    vibes: ['sweet', 'smooth'],
     description: "Hammer-ons climb the major pentatonic and lean on the major 3rd with a half bend.",
     tips: ["Pick the first note on each string, hammer the second.", "The half bend adds a little \"ache\" before resolving."],
     notes: [
@@ -1244,6 +1318,50 @@ export const LICKS: Lick[] = [
       { s: 3, f: 2, d: 0.5, t: 'h' },
       { s: 4, f: 0, d: 1, t: 'hb' },
       { s: 4, f: 0, d: 0.5, t: 'hr' },
+      { s: 3, f: 2, d: 0.5 },
+      { s: 3, f: 0, d: 2, t: 'v' },
+      R(2),
+    ],
+  },
+  {
+    id: 'major-blues-slip',
+    name: 'Major Blues Slip',
+    level: 2,
+    tonality: 'major',
+    box: 1,
+    style: 'Blues / Soul',
+    bpm: 80,
+    function: 'ending',
+    vibes: ['bluesy'],
+    description: 'Hammer from the minor 3rd to the major 3rd of the major key — the bluesy "slip" that B.B. King and every soul guitarist use — then resolve home.',
+    tips: ['The first note is the "wrong" minor 3rd; the hammer-on fixes it. That rub is the blues.', 'Works over the I chord of a major blues.'],
+    notes: [
+      { s: 3, f: 3, d: 0.5 },
+      { s: 3, f: 4, d: 0.5, t: 'h' },
+      { s: 4, f: 3, d: 0.5 },
+      { s: 4, f: 0, d: 0.5 },
+      { s: 3, f: 2, d: 0.5 },
+      { s: 3, f: 0, d: 1.5, t: 'v' },
+    ],
+  },
+  {
+    id: 'southern-rock-finale',
+    name: 'Southern Rock Bend Finale',
+    level: 3,
+    tonality: 'major',
+    box: 2,
+    style: 'Southern rock',
+    bpm: 96,
+    function: 'ending',
+    vibes: ['rock', 'sweet'],
+    description: 'Two big major-key bends — 2nd to 3rd on the high e, 5th to 6th on the B — then a run down to the major root.',
+    tips: ['Dig in: this is a big, confident ending.', 'Both bends are full bends; check them against the fretted target notes.'],
+    notes: [
+      { s: 5, f: 5, d: 1, t: 'b' },
+      { s: 5, f: 3, d: 0.5 },
+      { s: 4, f: 3, d: 1, t: 'b' },
+      { s: 4, f: 3, d: 0.5, t: 'r' },
+      { s: 4, f: 0, d: 0.5 },
       { s: 3, f: 2, d: 0.5 },
       { s: 3, f: 0, d: 2, t: 'v' },
       R(2),
@@ -1284,6 +1402,28 @@ const BEND_TECHNIQUES: Technique[] = ['b', 'hb', 'qb', 'bv', 'pb'];
 /** True when the lick contains at least one bend */
 export function hasBends(l: Lick): boolean {
   return l.notes.some((n) => n.t && BEND_TECHNIQUES.includes(n.t));
+}
+
+/**
+ * Pick licks for a solo: an opener, middle phrases and an ending. Prefers licks with the
+ * requested vibe and falls back to the whole pool when the vibe has nothing suitable.
+ * With majorEnding, the last phrase must be a major lick so it resolves to the major root.
+ */
+export function surpriseSolo(pool: Lick[], phrases: number, opts: { vibe?: Vibe | null; majorEnding?: boolean; random?: () => number } = {}): string[] {
+  const rnd = opts.random ?? Math.random;
+  const shuffled = pool.map((l) => ({ l, k: rnd() })).sort((a, b) => a.k - b.k).map((x) => x.l);
+  const vibePool = opts.vibe ? shuffled.filter((l) => l.vibes.includes(opts.vibe!)) : shuffled;
+  const out: string[] = [];
+  for (let i = 0; i < phrases; i++) {
+    const last = i === phrases - 1;
+    const fn = i === 0 ? 'opener' : last ? 'ending' : 'middle';
+    const majorOnly = !!opts.majorEnding && last;
+    const ok = (l: Lick) => !out.includes(l.id) && (!majorOnly || l.tonality === 'major');
+    const fits = (l: Lick) => ok(l) && (l.function === fn || l.function === 'any');
+    const pick = vibePool.find(fits) ?? vibePool.find(ok) ?? shuffled.find(fits) ?? shuffled.find(ok) ?? shuffled[0];
+    out.push(pick.id);
+  }
+  return out;
 }
 
 /** Total length in beats */

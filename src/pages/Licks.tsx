@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ChartPlayer from '../components/ChartPlayer';
 import LickPlayer from '../components/LickPlayer';
-import { LICKS, hasBends, type Lick } from '../data/licks';
+import { LICKS, VIBES, VIBE_IDS, hasBends, surpriseSolo, type Lick, type Vibe } from '../data/licks';
 import { PROGRESSIONS, buildProgressionChart } from '../data/progressions';
 import { setMixWithOtherAudio } from '../audio/engine';
 import Fretboard from '../components/Fretboard';
@@ -13,20 +13,24 @@ import { deleteSoloPlan, saveSoloPlan, setLickStatus, useAppState, type LickStat
 
 const STATUSES: LickStatus[] = ['learning', 'comfortable', 'mastered'];
 
-type LickFilter = 'all' | 'bends' | 'soulful' | 'minor' | 'major';
+type LickFilter = 'all' | Vibe | 'bends' | 'minor' | 'major';
 const FILTERS: Array<[LickFilter, string]> = [
   ['all', 'All'],
-  ['soulful', 'Slow & soulful'],
+  ...VIBE_IDS.map((v): [LickFilter, string] => [v, `${VIBES[v].emoji} ${VIBES[v].label}`]),
   ['bends', 'Bends'],
   ['minor', 'Minor'],
   ['major', 'Major'],
 ];
 const FILTER_KEY = 'fretwise.lickFilter';
 
+function isVibe(f: string): f is Vibe {
+  return f in VIBES;
+}
+
 function matchesFilter(l: Lick, f: LickFilter) {
   if (f === 'bends') return hasBends(l);
-  if (f === 'soulful') return !!l.soulful;
   if (f === 'minor' || f === 'major') return l.tonality === f;
+  if (isVibe(f)) return l.vibes.includes(f);
   return true;
 }
 
@@ -73,11 +77,7 @@ export function LickList() {
               </button>
             ))}
           </div>
-          {filter === 'soulful' && (
-            <p className="muted small">
-              Slow, vocal phrases with lots of space and long, held bends — made for soul-pop and R&B ballads. Play them softly and let every note ring.
-            </p>
-          )}
+          {isVibe(filter) && <p className="muted small">{VIBES[filter].description}</p>}
           {[1, 2, 3, 4].map((lvl) => {
             const items = shown.filter((l) => l.level === lvl);
             if (!items.length) return null;
@@ -106,7 +106,11 @@ function LickCard({ lick, status }: { lick: Lick; status?: LickStatus }) {
       <div className="row between">
         <span className="row gap">
           <span className="level-badge">{lick.tonality === 'major' ? 'Major' : 'Minor'}</span>
-          {lick.soulful && <span className="level-badge">Soulful</span>}
+          {lick.vibes.map((v) => (
+            <span key={v} className="level-badge" title={VIBES[v].label}>
+              {VIBES[v].emoji} {VIBES[v].short}
+            </span>
+          ))}
           {hasBends(lick) && <span className="level-badge">Bends</span>}
         </span>
         {status && status !== 'new' && <span className={`status ${status}`}>{status}</span>}
@@ -131,6 +135,13 @@ export function LickPage() {
       <p className="muted">
         {lick.style} · {lick.tonality === 'major' ? 'Major pentatonic' : 'Minor pentatonic'} · {lick.box ? `Box ${lick.box}` : 'B.B. King box'} · works as {lick.function === 'any' ? 'any part of a solo' : `an ${lick.function === 'opener' ? 'opener' : lick.function === 'ending' ? 'ending' : 'middle phrase'}`}
       </p>
+      <p className="row wrap gap">
+        {lick.vibes.map((v) => (
+          <span key={v} className="level-badge">
+            {VIBES[v].emoji} {VIBES[v].label}
+          </span>
+        ))}
+      </p>
       <p className="lead">{lick.description}</p>
       <div className="seg">
         {STATUSES.map((x) => (
@@ -154,11 +165,8 @@ export function LickPage() {
           <li>Change the key and play it somewhere else on the neck.</li>
           <li>Use it in a jam: play the lick, then improvise a response.</li>
         </ol>
-        <Link
-          className="btn"
-          to={`/jam?key=${lick.tonality === 'major' ? 'G' : 'Am'}${lick.soulful ? `&prog=${lick.tonality === 'major' ? 'soul-ballad-major' : 'soul-ballad'}` : ''}`}
-        >
-          Try it over a {lick.soulful ? 'slow soul ' : ''}backing track →
+        <Link className="btn" to={`/jam?key=${lick.tonality === 'major' ? 'G' : 'Am'}&prog=${VIBES[lick.vibes[0]].backing[lick.tonality]}`}>
+          Try it over a {VIBES[lick.vibes[0]].label.toLowerCase()} backing track →
         </Link>
       </div>
     </div>
@@ -170,6 +178,12 @@ const DEFAULT_SLOTS: Record<SoloScale, string[]> = {
   blues: ['low-riff', 'double-stop', 'blue-note'],
   majorPent: ['major-country', 'repeating-triplet', 'major-sweet'],
 };
+
+// Licks that fit a scale. Minor licks still work over a major key: they are
+// played in the relative minor (same notes, same box shapes).
+function lickOptionsFor(scale: SoloScale): Lick[] {
+  return scale === 'majorPent' ? [...LICKS.filter((l) => l.tonality === 'major'), ...LICKS.filter((l) => l.tonality === 'minor')] : LICKS.filter((l) => l.tonality === 'minor');
+}
 
 function phraseLabel(i: number, n: number) {
   if (i === 0) return `Phrase 1 · opener`;
@@ -188,6 +202,7 @@ function SoloBuilder() {
   const [box, setBox] = useState(1);
   const [slots, setSlots] = useState<string[]>(DEFAULT_SLOTS.minorPent);
   const [name, setName] = useState('My first solo');
+  const [vibe, setVibe] = useState<Vibe | null>(null);
   const [savedMsg, setSavedMsg] = useState(false);
   const taps = useRef<number[]>([]);
 
@@ -197,9 +212,14 @@ function SoloBuilder() {
   const label = scaleLabel(root, scale, flats);
   const query = backingQuery(root, scale, flats);
 
-  // Licks that fit the chosen scale. Minor licks still work over a major key: they are
-  // played in the relative minor (same notes, same box shapes).
-  const lickOptions = scale === 'majorPent' ? [...LICKS.filter((l) => l.tonality === 'major'), ...LICKS.filter((l) => l.tonality === 'minor')] : LICKS.filter((l) => l.tonality === 'minor');
+  const lickOptions = lickOptionsFor(scale);
+  const vibeMatches = vibe ? lickOptions.filter((l) => l.vibes.includes(vibe)) : lickOptions;
+  const otherOptions = vibe ? lickOptions.filter((l) => !l.vibes.includes(vibe)) : [];
+  const lickOption = (l: Lick) => (
+    <option key={l.id} value={l.id}>
+      {l.name} ({l.function}{scale === 'majorPent' ? (l.tonality === 'major' ? ', major' : ', relative minor') : ''})
+    </option>
+  );
   const progOptions = PROGRESSIONS.filter((p) => p.tonality === 'blues' || p.tonality === tonality);
   const prog = progOptions.find((p) => p.id === progId) ?? progOptions[0];
   const bars = useMemo(() => buildProgressionChart(prog, { root, tonality }).map((chords) => ({ chords })), [prog, root, tonality]);
@@ -210,8 +230,33 @@ function SoloBuilder() {
     return () => setMixWithOtherAudio(false);
   }, [source]);
 
+  const surprise = (sc: SoloScale, v: Vibe | null, n = slots.length) =>
+    setSlots(surpriseSolo(lickOptionsFor(sc), n, { vibe: v, majorEnding: sc === 'majorPent' }));
+
+  const applyBacking = (id: string) => {
+    const p = PROGRESSIONS.find((x) => x.id === id);
+    if (!p) return;
+    setProgId(id);
+    setBpm(p.defaultBpm);
+  };
+
+  const chooseVibe = (v: Vibe | null) => {
+    setVibe(v);
+    if (!v) return;
+    // a vibe with no licks in this scale (e.g. "sweet" in minor) moves to major pentatonic
+    const sc = lickOptionsFor(scale).some((l) => l.vibes.includes(v)) ? scale : 'majorPent';
+    if (sc !== scale) setScale(sc);
+    applyBacking(VIBES[v].backing[sc === 'majorPent' ? 'major' : sc === 'blues' ? 'blues' : 'minor']);
+    surprise(sc, v);
+  };
+
   const changeScale = (sc: SoloScale) => {
     setScale(sc);
+    if (vibe) {
+      applyBacking(VIBES[vibe].backing[sc === 'majorPent' ? 'major' : sc === 'blues' ? 'blues' : 'minor']);
+      surprise(sc, vibe);
+      return;
+    }
     const valid = new Set((sc === 'majorPent' ? LICKS : LICKS.filter((l) => l.tonality === 'minor')).map((l) => l.id));
     if (!slots.every((id) => valid.has(id)) || (sc === 'majorPent') !== (scale === 'majorPent')) setSlots(DEFAULT_SLOTS[sc]);
     const p = PROGRESSIONS.find((x) => x.id === progId);
@@ -358,23 +403,50 @@ function SoloBuilder() {
 
       <div className="card">
         <h3>Your solo</h3>
+        <div className="vibe-picker">
+          <span className="muted small">Feeling</span>
+          <div className="row wrap gap">
+            <button className={`chip ${vibe === null ? 'on' : ''}`} onClick={() => chooseVibe(null)}>
+              Any vibe
+            </button>
+            {VIBE_IDS.map((v) => (
+              <button key={v} className={`chip ${vibe === v ? 'on' : ''}`} onClick={() => chooseVibe(v)}>
+                {VIBES[v].emoji} {VIBES[v].label}
+              </button>
+            ))}
+          </div>
+          {vibe && (
+            <p className="muted small">
+              {VIBES[vibe].description} {vibeMatches.length} licks fit this vibe — they're listed first in each phrase, and 🎲 Surprise me picks from them.
+            </p>
+          )}
+        </div>
         <div className="grid-controls">
           {slots.map((id, i) => (
             <label key={i}>
               {phraseLabel(i, slots.length)}
               <select value={id} onChange={(e) => setSlots(slots.map((x, j) => (j === i ? e.target.value : x)))}>
-                {lickOptions.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} ({l.function}{scale === 'majorPent' ? (l.tonality === 'major' ? ', major' : ', relative minor') : ''})
-                  </option>
-                ))}
+                {vibe ? (
+                  <>
+                    <optgroup label={`${VIBES[vibe].emoji} ${VIBES[vibe].label}`}>{vibeMatches.map(lickOption)}</optgroup>
+                    <optgroup label="Other licks">{otherOptions.map(lickOption)}</optgroup>
+                  </>
+                ) : (
+                  lickOptions.map(lickOption)
+                )}
               </select>
             </label>
           ))}
         </div>
         <div className="row gap wrap">
           {slots.length < 6 && (
-            <button className="btn" onClick={() => setSlots([...slots.slice(0, -1), lickOptions[0].id, slots[slots.length - 1]])}>
+            <button
+              className="btn"
+              onClick={() => {
+                const fresh = vibeMatches.find((l) => !slots.includes(l.id) && l.function !== 'ending') ?? vibeMatches[0] ?? lickOptions[0];
+                setSlots([...slots.slice(0, -1), fresh.id, slots[slots.length - 1]]);
+              }}
+            >
               + Add a phrase
             </button>
           )}
@@ -383,24 +455,8 @@ function SoloBuilder() {
               − Remove a phrase
             </button>
           )}
-          <button
-            className="btn ghost"
-            onClick={() => {
-              const shuffled = [...lickOptions].sort(() => Math.random() - 0.5);
-              const pick = (fn: string, avoid: string[], majorOnly: boolean) =>
-                shuffled.find((l) => (l.function === fn || l.function === 'any') && !avoid.includes(l.id) && (!majorOnly || l.tonality === 'major'))?.id ??
-                shuffled.find((l) => !avoid.includes(l.id) && (!majorOnly || l.tonality === 'major'))?.id ??
-                shuffled[0].id;
-              const out: string[] = [];
-              slots.forEach((_, i) => {
-                const last = i === slots.length - 1;
-                // in a major key the ending must resolve to the major root, so use a major lick
-                out.push(pick(i === 0 ? 'opener' : last ? 'ending' : 'middle', out, scale === 'majorPent' && last));
-              });
-              setSlots(out);
-            }}
-          >
-            🎲 Surprise me
+          <button className="btn ghost" onClick={() => surprise(scale, vibe)}>
+            🎲 Surprise me{vibe ? ` (${VIBES[vibe].label.toLowerCase()})` : ''}
           </button>
         </div>
         <div className="row gap wrap">
@@ -417,6 +473,7 @@ function SoloBuilder() {
                 source,
                 progression: prog.id,
                 bpm: source === 'external' ? trackBpm ?? undefined : bpm,
+                vibe: vibe ?? undefined,
               });
               setSavedMsg(true);
               setTimeout(() => setSavedMsg(false), 2000);
@@ -442,9 +499,10 @@ function SoloBuilder() {
                     else if (p.bpm) setBpm(p.bpm);
                     setSlots(p.lickIds);
                     setName(p.name);
+                    setVibe(p.vibe ?? null);
                   }}
                 >
-                  {p.name} <span className="muted">· {p.key} {p.scale === 'majorPent' ? 'major' : p.scale === 'blues' ? 'blues' : 'minor'}</span>
+                  {p.vibe ? `${VIBES[p.vibe].emoji} ` : ''}{p.name} <span className="muted">· {p.key} {p.scale === 'majorPent' ? 'major' : p.scale === 'blues' ? 'blues' : 'minor'}</span>
                 </button>
                 <button className="linkish" onClick={() => deleteSoloPlan(p.id)} aria-label="delete">×</button>
               </span>

@@ -1171,3 +1171,13 @@ label {
   fill: var(--muted);
   font-size: 10px;
 }
+
+.vibe-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.vibe-picker p {
+  margin: 0;
+}

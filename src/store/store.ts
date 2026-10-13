@@ -1,5 +1,6 @@
 // Persistent app state in localStorage, exposed via a tiny subscribe/useSyncExternalStore store.
 import { useSyncExternalStore } from 'react';
+import type { Vibe } from '../data/licks';
 import type { Song } from '../data/songs';
 
 export type LickStatus = 'new' | 'learning' | 'comfortable' | 'mastered';
@@ -31,6 +32,7 @@ export interface SoloPlan {
   source?: 'builtin' | 'external';
   progression?: string;
   bpm?: number;
+  vibe?: Vibe;
 }
 
 export interface AppState {
