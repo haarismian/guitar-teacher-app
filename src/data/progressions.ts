@@ -79,6 +79,15 @@ export const PROGRESSIONS: Progression[] = [
     description: 'Modern minor pop/rock loop.',
   },
   {
+    id: 'soul-ballad',
+    name: 'Slow soul ballad (i – bVI – bIII – bVII)',
+    tonality: 'minor',
+    bars: [b([0, 'm7']), b([8, 'maj7']), b([3, '']), b([10, ''])],
+    defaultStyle: 'ballad',
+    defaultBpm: 68,
+    description: 'Slow, moody soul-pop loop. Leave space and let long bends sing.',
+  },
+  {
     id: 'one-chord-minor',
     name: 'One-chord minor drone',
     tonality: 'minor',
@@ -122,6 +131,15 @@ export const PROGRESSIONS: Progression[] = [
     defaultStyle: 'folk',
     defaultBpm: 110,
     description: '50s progression (Stand By Me).',
+  },
+  {
+    id: 'soul-ballad-major',
+    name: 'Soul ballad (I – iii – vi – IV)',
+    tonality: 'major',
+    bars: [b([0, 'maj7']), b([4, 'm7']), b([9, 'm7']), b([5, ''])],
+    defaultStyle: 'ballad',
+    defaultBpm: 70,
+    description: 'Warm, slow major soul progression. Try sweet 2→3 and 5→6 bends.',
   },
   {
     id: 'one-chord-major',

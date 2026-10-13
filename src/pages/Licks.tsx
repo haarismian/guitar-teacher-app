@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ChartPlayer from '../components/ChartPlayer';
 import LickPlayer from '../components/LickPlayer';
-import { LICKS, type Lick } from '../data/licks';
+import { LICKS, hasBends, type Lick } from '../data/licks';
 import { PROGRESSIONS, buildProgressionChart } from '../data/progressions';
 import { setMixWithOtherAudio } from '../audio/engine';
 import Fretboard from '../components/Fretboard';
@@ -13,9 +13,46 @@ import { deleteSoloPlan, saveSoloPlan, setLickStatus, useAppState, type LickStat
 
 const STATUSES: LickStatus[] = ['learning', 'comfortable', 'mastered'];
 
+type LickFilter = 'all' | 'bends' | 'soulful' | 'minor' | 'major';
+const FILTERS: Array<[LickFilter, string]> = [
+  ['all', 'All'],
+  ['soulful', 'Slow & soulful'],
+  ['bends', 'Bends'],
+  ['minor', 'Minor'],
+  ['major', 'Major'],
+];
+const FILTER_KEY = 'fretwise.lickFilter';
+
+function matchesFilter(l: Lick, f: LickFilter) {
+  if (f === 'bends') return hasBends(l);
+  if (f === 'soulful') return !!l.soulful;
+  if (f === 'minor' || f === 'major') return l.tonality === f;
+  return true;
+}
+
+function loadFilter(): LickFilter {
+  try {
+    const v = localStorage.getItem(FILTER_KEY);
+    if (v && FILTERS.some(([k]) => k === v)) return v as LickFilter;
+  } catch {
+    // storage unavailable
+  }
+  return 'all';
+}
+
 export function LickList() {
   const s = useAppState();
   const [tab, setTab] = useState<'licks' | 'builder'>('licks');
+  const [filter, setFilterState] = useState<LickFilter>(loadFilter);
+  const setFilter = (f: LickFilter) => {
+    setFilterState(f);
+    try {
+      localStorage.setItem(FILTER_KEY, f);
+    } catch {
+      // storage unavailable
+    }
+  };
+  const shown = LICKS.filter((l) => matchesFilter(l, filter));
   const counts = STATUSES.map((st) => LICKS.filter((l) => s.lickStatus[l.id] === st).length);
   return (
     <div className="page">
@@ -29,16 +66,32 @@ export function LickList() {
           <p className="muted">
             {counts[0]} learning · {counts[1]} comfortable · {counts[2]} mastered — out of {LICKS.length}. Every lick transposes to any key.
           </p>
-          {[1, 2, 3].map((lvl) => (
-            <section key={lvl}>
-              <h2>{lvl === 1 ? 'Starter licks' : lvl === 2 ? 'Next steps' : 'Advanced'}</h2>
-              <div className="song-grid">
-                {LICKS.filter((l) => l.level === lvl).map((l) => (
-                  <LickCard key={l.id} lick={l} status={s.lickStatus[l.id]} />
-                ))}
-              </div>
-            </section>
-          ))}
+          <div className="row wrap gap">
+            {FILTERS.map(([f, label]) => (
+              <button key={f} className={`chip ${filter === f ? 'on' : ''}`} onClick={() => setFilter(f)}>
+                {label} ({LICKS.filter((l) => matchesFilter(l, f)).length})
+              </button>
+            ))}
+          </div>
+          {filter === 'soulful' && (
+            <p className="muted small">
+              Slow, vocal phrases with lots of space and long, held bends — made for soul-pop and R&B ballads. Play them softly and let every note ring.
+            </p>
+          )}
+          {[1, 2, 3, 4].map((lvl) => {
+            const items = shown.filter((l) => l.level === lvl);
+            if (!items.length) return null;
+            return (
+              <section key={lvl}>
+                <h2>{lvl === 1 ? 'Starter licks' : lvl === 2 ? 'Next steps' : lvl === 3 ? 'Advanced' : 'Expert'}</h2>
+                <div className="song-grid">
+                  {items.map((l) => (
+                    <LickCard key={l.id} lick={l} status={s.lickStatus[l.id]} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </>
       ) : (
         <SoloBuilder />
@@ -51,7 +104,11 @@ function LickCard({ lick, status }: { lick: Lick; status?: LickStatus }) {
   return (
     <Link to={`/licks/${lick.id}`} className="song-card card">
       <div className="row between">
-        <span className="level-badge">{lick.tonality === 'major' ? 'Major' : 'Minor'}</span>
+        <span className="row gap">
+          <span className="level-badge">{lick.tonality === 'major' ? 'Major' : 'Minor'}</span>
+          {lick.soulful && <span className="level-badge">Soulful</span>}
+          {hasBends(lick) && <span className="level-badge">Bends</span>}
+        </span>
         {status && status !== 'new' && <span className={`status ${status}`}>{status}</span>}
       </div>
       <strong>{lick.name}</strong>
@@ -97,7 +154,12 @@ export function LickPage() {
           <li>Change the key and play it somewhere else on the neck.</li>
           <li>Use it in a jam: play the lick, then improvise a response.</li>
         </ol>
-        <Link className="btn" to={`/jam?key=${lick.tonality === 'major' ? 'G' : 'Am'}`}>Try it over a backing track →</Link>
+        <Link
+          className="btn"
+          to={`/jam?key=${lick.tonality === 'major' ? 'G' : 'Am'}${lick.soulful ? `&prog=${lick.tonality === 'major' ? 'soul-ballad-major' : 'soul-ballad'}` : ''}`}
+        >
+          Try it over a {lick.soulful ? 'slow soul ' : ''}backing track →
+        </Link>
       </div>
     </div>
   );

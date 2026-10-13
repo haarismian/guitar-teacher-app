@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { click, getContext, playPluck, unlockAudio } from '../audio/engine';
-import { lickBeats, TECHNIQUE_LABEL, type Lick } from '../data/licks';
+import { lickBeats, TECHNIQUE_LABEL, TECHNIQUE_SYMBOL, type Lick } from '../data/licks';
 import { ALL_KEYS, STANDARD_TUNING, comfortableRootFret, keyShortName, mod12, parseKey, type Key } from '../music/theory';
 import Fretboard from './Fretboard';
 
@@ -96,8 +96,11 @@ export function TabView({ notes, current, beats, minBeats = 0, labels, firstBar,
           const x = left + n.start * pxBeat + 16;
           let label = String(n.fret);
           if (n.t === 'b') label = `${n.fret}b`;
-          if (n.t === 'hb') label = `${n.fret}b`;
+          if (n.t === 'hb' || n.t === 'qb') label = `${n.fret}b`;
+          if (n.t === 'bv') label = `${n.fret}b~`;
           if (n.t === 'r') label = `(${n.fret + 2})r${n.fret}`;
+          if (n.t === 'hr') label = `(${n.fret + 1})r${n.fret}`;
+          if (n.t === 'pb') label = `${n.fret}pb`;
           if (n.t === 'h') label = `h${n.fret}`;
           if (n.t === 'p') label = `p${n.fret}`;
           if (n.t === 's') label = `/${n.fret}`;
@@ -117,9 +120,9 @@ export function TabView({ notes, current, beats, minBeats = 0, labels, firstBar,
                   </g>
                 );
               })}
-              {(n.t === 'b' || n.t === 'hb') && (
+              {n.t && BEND_LABEL[n.t] && (
                 <text x={x + 10} y={y(n.s) - 12} className="tab-bendlabel">
-                  {n.t === 'b' ? 'full' : '½'}
+                  {BEND_LABEL[n.t]}
                 </text>
               )}
             </g>
@@ -129,6 +132,8 @@ export function TabView({ notes, current, beats, minBeats = 0, labels, firstBar,
     </div>
   );
 }
+
+const BEND_LABEL: Record<string, string> = { b: 'full', bv: 'full', hb: '½', qb: '¼', pb: 'pre' };
 
 /**
  * Schedule a list of placed notes on the audio clock. onNote(i) fires (via setTimeout)
@@ -144,17 +149,19 @@ export function scheduleNotes(notes: PlacedNote[], t0: number, spb: number, onNo
     timers.push(window.setTimeout(() => onNote(i), Math.max(0, (when - ctx.currentTime) * 1000)));
     if (n.rest) return;
     const midi = STANDARD_TUNING[n.s] + n.fret;
-    const legato = n.t === 'h' || n.t === 'p' || n.t === 's' || n.t === 'r';
+    const legato = n.t === 'h' || n.t === 'p' || n.t === 's' || n.t === 'r' || n.t === 'hr';
     playPluck(midi, when, {
       tone: 'electric',
       gain: legato ? 0.28 : 0.38,
       duration: dur + 0.05,
-      bendSemis: n.t === 'b' ? 2 : n.t === 'hb' ? 1 : undefined,
-      bendFrom: n.t === 'r' ? 2 : undefined,
-      bendTime: Math.min(0.22, dur * 0.5),
+      bendSemis: n.t === 'b' || n.t === 'bv' ? 2 : n.t === 'hb' ? 1 : n.t === 'qb' ? 0.5 : undefined,
+      bendFrom: n.t === 'r' || n.t === 'pb' ? 2 : n.t === 'hr' ? 1 : undefined,
+      // pre-bends release slowly and expressively; everything else bends quickly
+      bendTime: n.t === 'pb' ? Math.min(0.45, dur * 0.6) : Math.min(0.22, dur * 0.5),
       // only slide from a note that's close by (not from the previous phrase)
       slideFrom: n.t === 's' && prevMidi !== null && Math.abs(prevMidi - midi) <= 5 ? prevMidi - midi : undefined,
-      vibrato: n.t === 'v',
+      vibrato: n.t === 'v' || n.t === 'bv',
+      vibratoDelay: n.t === 'bv' ? 0.3 : undefined,
     });
     n.extra.forEach((e) => playPluck(STANDARD_TUNING[e.s] + e.fret, when, { tone: 'electric', gain: 0.3, duration: dur + 0.05 }));
     prevMidi = midi;
@@ -256,7 +263,7 @@ export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = tr
       <TabView notes={notes} current={current} beats={beats} />
       {techniques.length > 0 && (
         <p className="muted small">
-          {techniques.map((t) => `${t === 'b' || t === 'hb' ? 'b' : t === 'r' ? 'r' : t === 's' ? '/' : t === 'v' ? '~' : t} = ${TECHNIQUE_LABEL[t]}`).join(' · ')}
+          {techniques.map((t) => `${TECHNIQUE_SYMBOL[t]} = ${TECHNIQUE_LABEL[t]}`).join(' · ')}
         </p>
       )}
       <div className="row wrap gap">

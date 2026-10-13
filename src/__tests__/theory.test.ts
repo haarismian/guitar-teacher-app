@@ -70,6 +70,26 @@ describe('licks', () => {
       for (const n of notes) if (!n.rest) expect(allowed, `${lick.id}`).toContain(mod12(STANDARD_TUNING[n.s] + n.fret));
     }
   });
+  it('bends land on musical targets', () => {
+    for (const lick of LICKS) {
+      const { notes } = placeLick(lick, lick.tonality === 'major' ? { root: 0, tonality: 'major' } : { root: 9, tonality: 'minor' });
+      // minor: blues scale + the 9th; major (written in relative A minor): major pentatonic + its 4th
+      const targets = (lick.tonality === 'major' ? [0, 3, 5, 7, 8, 10] : [0, 2, 3, 5, 6, 7, 10]).map((i) => mod12(9 + i));
+      for (const n of notes) {
+        const semis = n.t === 'b' || n.t === 'bv' || n.t === 'pb' ? 2 : n.t === 'hb' ? 1 : 0;
+        if (semis) expect(targets, `${lick.id} bend`).toContain(mod12(STANDARD_TUNING[n.s] + n.fret + semis));
+      }
+    }
+  });
+  it('have unique ids and stay on the neck', () => {
+    expect(new Set(LICKS.map((l) => l.id)).size).toBe(LICKS.length);
+    for (const lick of LICKS)
+      for (let root = 0; root < 12; root++) {
+        const { notes } = placeLick(lick, { root, tonality: lick.tonality });
+        for (const n of notes) if (!n.rest) expect(n.fret, lick.id).toBeGreaterThanOrEqual(0);
+        for (const n of notes) if (!n.rest) expect(n.fret, lick.id).toBeLessThanOrEqual(24);
+      }
+  });
 });
 
 describe('content', () => {

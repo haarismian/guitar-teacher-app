@@ -138,6 +138,7 @@ export interface PluckOptions {
   bendFrom?: number; // start bent (for releases)
   slideFrom?: number; // semitones offset to slide from
   vibrato?: boolean;
+  vibratoDelay?: number; // seconds before vibrato starts (e.g. after a bend reaches pitch)
   destination?: AudioNode;
 }
 
@@ -172,8 +173,9 @@ export function playPluck(midi: number, when: number, opts: PluckOptions = {}) {
     const lfo = c.createOscillator();
     const depth = c.createGain();
     lfo.frequency.value = 5.5;
-    depth.gain.setValueAtTime(0, when);
-    depth.gain.linearRampToValueAtTime(0.025, when + 0.25);
+    const vStart = when + (opts.vibratoDelay ?? 0);
+    depth.gain.setValueAtTime(0, vStart);
+    depth.gain.linearRampToValueAtTime(0.025, vStart + 0.25);
     lfo.connect(depth);
     depth.connect(rate);
     lfo.start(when);
