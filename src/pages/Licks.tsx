@@ -9,7 +9,8 @@ import Fretboard from '../components/Fretboard';
 import SoloSheet from '../components/SoloSheet';
 import { backingQuery, scaleLabel, spotifySearchUrl, youtubeSearchUrl, type SoloScale } from '../data/externalTracks';
 import { keyShortName, mod12, noteName, parseNoteName, usesFlats } from '../music/theory';
-import { deleteSoloPlan, saveSoloPlan, setLickStatus, useAppState, type LickStatus } from '../store/store';
+import { PRESET_SOLOS } from '../data/presetSolos';
+import { deleteSoloPlan, saveSoloPlan, setLickStatus, useAppState, type LickStatus, type SoloPlan } from '../store/store';
 
 const STATUSES: LickStatus[] = ['learning', 'comfortable', 'mastered'];
 
@@ -133,7 +134,7 @@ export function LickPage() {
       <Link to="/licks" className="back">← Licks</Link>
       <h1>{lick.name}</h1>
       <p className="muted">
-        {lick.style} · {lick.tonality === 'major' ? 'Major pentatonic' : 'Minor pentatonic'} · {lick.box ? `Box ${lick.box}` : 'B.B. King box'} · works as {lick.function === 'any' ? 'any part of a solo' : `an ${lick.function === 'opener' ? 'opener' : lick.function === 'ending' ? 'ending' : 'middle phrase'}`}
+        {lick.style} · {lick.tonality === 'major' ? 'Major pentatonic' : 'Minor pentatonic'} · {lick.box ? `Box ${lick.box}` : 'B.B. King box'} · works as {lick.function === 'any' ? 'any part of a solo' : lick.function === 'opener' ? 'an opener' : lick.function === 'ending' ? 'an ending' : 'a middle phrase'}
       </p>
       <p className="row wrap gap">
         {lick.vibes.map((v) => (
@@ -229,6 +230,18 @@ function SoloBuilder() {
     setMixWithOtherAudio(source === 'external');
     return () => setMixWithOtherAudio(false);
   }, [source]);
+
+  const loadPlan = (p: SoloPlan) => {
+    setRoot(parseNoteName(p.key) ?? 9);
+    setScale(p.scale ?? 'minorPent');
+    setSource(p.source ?? 'builtin');
+    setProgId(p.progression ?? 'blues12');
+    if (p.source === 'external') setTrackBpm(p.bpm ?? null);
+    else if (p.bpm) setBpm(p.bpm);
+    setSlots(p.lickIds);
+    setName(p.name);
+    setVibe(p.vibe ?? null);
+  };
 
   const surprise = (sc: SoloScale, v: Vibe | null, n = slots.length) =>
     setSlots(surpriseSolo(lickOptionsFor(sc), n, { vibe: v, majorEnding: sc === 'majorPent' }));
@@ -482,6 +495,18 @@ function SoloBuilder() {
             {savedMsg ? '✓ Saved' : 'Save solo'}
           </button>
         </div>
+        <div className="preset-solos">
+          <span className="muted small">Ready-made solos — tap one to load it, then change any phrase:</span>
+          <div className="row wrap gap">
+            {PRESET_SOLOS.map((p) => (
+              <button key={p.id} className={`chip ${name === p.name ? 'on' : ''}`} title={p.description} onClick={() => loadPlan(p)}>
+                {p.vibe ? `${VIBES[p.vibe].emoji} ` : ''}
+                {p.name} <span className="muted">· {p.key} {p.scale === 'majorPent' ? 'major' : 'minor'}</span>
+              </button>
+            ))}
+          </div>
+          {PRESET_SOLOS.find((p) => p.name === name) && <p className="muted small">{PRESET_SOLOS.find((p) => p.name === name)!.description}</p>}
+        </div>
         {s.soloPlans.length > 0 && (
           <div className="row wrap gap">
             <span className="muted small">Saved:</span>
@@ -489,18 +514,7 @@ function SoloBuilder() {
               <span key={p.id} className="chip on">
                 <button
                   className="linkish"
-                  onClick={() => {
-                    setRoot(parseNoteName(p.key) ?? 9);
-                    setScale(p.scale ?? 'minorPent');
-                    setSource(p.source ?? 'builtin');
-                    if (p.progression) setProgId(p.progression);
-                    else setProgId('blues12');
-                    if (p.source === 'external') setTrackBpm(p.bpm ?? null);
-                    else if (p.bpm) setBpm(p.bpm);
-                    setSlots(p.lickIds);
-                    setName(p.name);
-                    setVibe(p.vibe ?? null);
-                  }}
+                  onClick={() => loadPlan(p)}
                 >
                   {p.vibe ? `${VIBES[p.vibe].emoji} ` : ''}{p.name} <span className="muted">· {p.key} {p.scale === 'majorPent' ? 'major' : p.scale === 'blues' ? 'blues' : 'minor'}</span>
                 </button>

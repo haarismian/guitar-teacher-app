@@ -88,6 +88,15 @@ export const PROGRESSIONS: Progression[] = [
     description: 'Slow, moody soul-pop loop. Leave space and let long bends sing.',
   },
   {
+    id: 'sad-ballad',
+    name: 'Sad ballad (i – bVI – iv – v)',
+    tonality: 'minor',
+    bars: [b([0, 'm']), b([8, 'maj7']), b([5, 'm']), b([7, 'm'])],
+    defaultStyle: 'ballad',
+    defaultBpm: 60,
+    description: 'Slow and heartbroken: every chord is from the natural minor, even the minor v. Leave lots of space.',
+  },
+  {
     id: 'one-chord-minor',
     name: 'One-chord minor drone',
     tonality: 'minor',
@@ -140,6 +149,15 @@ export const PROGRESSIONS: Progression[] = [
     defaultStyle: 'ballad',
     defaultBpm: 70,
     description: 'Warm, slow major soul progression. Try sweet 2→3 and 5→6 bends.',
+  },
+  {
+    id: 'sad-ballad-major',
+    name: 'Bittersweet ballad (vi – IV – I – V)',
+    tonality: 'major',
+    bars: [b([9, 'm']), b([5, '']), b([0, '']), b([7, ''])],
+    defaultStyle: 'ballad',
+    defaultBpm: 64,
+    description: 'The pop-ballad loop that starts on the minor vi chord — a major key that still sounds sad.',
   },
   {
     id: 'one-chord-major',

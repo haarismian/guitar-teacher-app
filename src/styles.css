@@ -1178,6 +1178,13 @@ label {
   gap: 6px;
   margin-bottom: 12px;
 }
+.preset-solos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+.preset-solos p,
 .vibe-picker p {
   margin: 0;
 }

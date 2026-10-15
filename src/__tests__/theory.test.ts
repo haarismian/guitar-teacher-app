@@ -4,6 +4,7 @@ import { chordMidiNotes, voicingFor } from '../music/chords';
 import { detectKey, keyShortName, parseChord, pentatonicBox, transposeChordSymbol, STANDARD_TUNING, mod12 } from '../music/theory';
 import { LICKS, VIBES, VIBE_IDS, surpriseSolo } from '../data/licks';
 import { PROGRESSIONS } from '../data/progressions';
+import { PRESET_SOLOS } from '../data/presetSolos';
 import { SONGS } from '../data/songs';
 import { ALL_LESSONS } from '../data/curriculum';
 import { buildSession } from '../data/sessionPlanner';
@@ -74,8 +75,8 @@ describe('licks', () => {
   it('bends land on musical targets', () => {
     for (const lick of LICKS) {
       const { notes } = placeLick(lick, lick.tonality === 'major' ? { root: 0, tonality: 'major' } : { root: 9, tonality: 'minor' });
-      // minor: blues scale + the 9th; major (written in relative A minor): major pentatonic + its 4th
-      const targets = (lick.tonality === 'major' ? [0, 3, 5, 7, 8, 10] : [0, 2, 3, 5, 6, 7, 10]).map((i) => mod12(9 + i));
+      // minor: blues scale + the 9th and the sad b6; major (written in relative A minor): major pentatonic + its 4th
+      const targets = (lick.tonality === 'major' ? [0, 3, 5, 7, 8, 10] : [0, 2, 3, 5, 6, 7, 8, 10]).map((i) => mod12(9 + i));
       for (const n of notes) {
         const semis = n.t === 'b' || n.t === 'bv' || n.t === 'pb' ? 2 : n.t === 'hb' ? 1 : 0;
         if (semis) expect(targets, `${lick.id} bend`).toContain(mod12(STANDARD_TUNING[n.s] + n.fret + semis));
@@ -104,6 +105,19 @@ describe('licks', () => {
         const minor = surpriseSolo(minorPool, 3, { vibe: v, random });
         for (const id of minor) expect(LICKS.find((l) => l.id === id)!.vibes, `${v} ${id}`).toContain(v);
       }
+    }
+  });
+  it('preset solos use real licks and backing tracks that fit their scale', () => {
+    for (const p of PRESET_SOLOS) {
+      const prog = PROGRESSIONS.find((x) => x.id === p.progression);
+      expect(prog, p.id).toBeDefined();
+      expect(prog!.tonality === 'blues' || prog!.tonality === (p.scale === 'majorPent' ? 'major' : 'minor'), p.id).toBe(true);
+      for (const id of p.lickIds) {
+        const lick = LICKS.find((l) => l.id === id);
+        expect(lick, `${p.id} ${id}`).toBeDefined();
+        if (p.scale !== 'majorPent') expect(lick!.tonality, `${p.id} ${id}`).toBe('minor');
+      }
+      if (p.scale === 'majorPent') expect(LICKS.find((l) => l.id === p.lickIds[p.lickIds.length - 1])!.tonality).toBe('major');
     }
   });
   it('have unique ids and stay on the neck', () => {

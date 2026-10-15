@@ -98,8 +98,7 @@ export function TabView({ notes, current, beats, minBeats = 0, labels, firstBar,
           if (n.t === 'b') label = `${n.fret}b`;
           if (n.t === 'hb' || n.t === 'qb') label = `${n.fret}b`;
           if (n.t === 'bv') label = `${n.fret}b~`;
-          if (n.t === 'r') label = `(${n.fret + 2})r${n.fret}`;
-          if (n.t === 'hr') label = `(${n.fret + 1})r${n.fret}`;
+          if (n.t === 'r' || n.t === 'hr') label = `r${n.fret}`;
           if (n.t === 'pb') label = `${n.fret}pb`;
           if (n.t === 'h') label = `h${n.fret}`;
           if (n.t === 'p') label = `p${n.fret}`;
@@ -263,7 +262,7 @@ export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = tr
       <TabView notes={notes} current={current} beats={beats} />
       {techniques.length > 0 && (
         <p className="muted small">
-          {techniques.map((t) => `${TECHNIQUE_SYMBOL[t]} = ${TECHNIQUE_LABEL[t]}`).join(' · ')}
+          {[...new Set(techniques.map((t) => `${TECHNIQUE_SYMBOL[t]} = ${TECHNIQUE_LABEL[t]}`))].join(' · ')}
         </p>
       )}
       <div className="row wrap gap">
