@@ -129,6 +129,16 @@ describe('licks', () => {
         for (const n of notes) if (!n.rest) expect(n.fret, lick.id).toBeLessThanOrEqual(24);
       }
   });
+  it('places licks that travel across several boxes on the neck in every key', () => {
+    // box 5 below the root up to box 1 an octave higher: an 11-fret span always fits on a 22-fret neck
+    const wide = { ...LICKS[0], notes: [{ s: 0, f: -3, d: 1 }, { s: 5, f: 8, d: 1 }] };
+    for (let root = 0; root < 12; root++) {
+      const { notes, canOctaveDown } = placeLick(wide, { root, tonality: 'minor' });
+      expect(Math.min(...notes.map((n) => n.fret)), `${root}`).toBeGreaterThanOrEqual(0);
+      expect(Math.max(...notes.map((n) => n.fret)), `${root}`).toBeLessThanOrEqual(22);
+      expect(canOctaveDown).toBe(false);
+    }
+  });
 });
 
 describe('content', () => {

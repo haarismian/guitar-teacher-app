@@ -9,6 +9,7 @@ interface Props {
   initialKey?: string;
   showFretboard?: boolean;
   targetBpm?: number; // start at this tempo (e.g. to match an external backing track)
+  lockedKey?: string; // key set by the page (solo builder): shown instead of the lick's own key picker
 }
 
 export interface PlacedNote {
@@ -21,17 +22,32 @@ export interface PlacedNote {
   rest?: boolean;
 }
 
-export function placeLick(lick: Lick, key: Key, octaveDown = false): { notes: PlacedNote[]; rootFret: number } {
+const MAX_FRET = 22;
+
+/**
+ * Put a lick on the neck in a key. The root sits at the comfortable box-1 fret unless the
+ * lick (e.g. one that travels across several boxes) would run off the neck there, in which
+ * case it moves an octave. canOctaveDown says whether the whole lick also fits an octave lower.
+ */
+export function placeLick(lick: Lick, key: Key, octaveDown = false): { notes: PlacedNote[]; rootFret: number; canOctaveDown: boolean } {
   const minorRoot = lick.tonality === 'major' ? mod12(key.root - 3) : key.root;
-  let r = comfortableRootFret(minorRoot);
-  if (octaveDown && r - 12 >= 0) r -= 12;
+  const offs = lick.notes.filter((n) => !n.rest).flatMap((n) => [n.f, ...(n.x ?? []).map(([, f]) => f)]);
+  const lo = Math.min(...offs);
+  const hi = Math.max(...offs);
+  const overflow = (r: number) => Math.max(0, -(r + lo)) + Math.max(0, r + hi - MAX_FRET);
+  const fits = (r: number) => overflow(r) === 0;
+  const home = comfortableRootFret(minorRoot);
+  // stay at home if possible, otherwise the octave that runs off the neck least
+  let r = [home, home - 12, home + 12].reduce((best, x) => (overflow(x) < overflow(best) ? x : best));
+  const canOctaveDown = fits(r - 12);
+  if (octaveDown && canOctaveDown) r -= 12;
   let t = 0;
   const notes = lick.notes.map((n) => {
     const p: PlacedNote = { s: n.s, fret: r + n.f, start: t, d: n.d, t: n.t, extra: (n.x ?? []).map(([s, f]) => ({ s, fret: r + f })), rest: n.rest };
     t += n.d;
     return p;
   });
-  return { notes, rootFret: r };
+  return { notes, rootFret: r, canOctaveDown };
 }
 
 export interface TabLabel {
@@ -168,7 +184,7 @@ export function scheduleNotes(notes: PlacedNote[], t0: number, spb: number, onNo
   return timers;
 }
 
-export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = true, targetBpm }: Props) {
+export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = true, targetBpm, lockedKey }: Props) {
   const defaultKey = lick.tonality === 'major' && /m$/.test(initialKey) ? 'G' : lick.tonality === 'minor' && !/m$/.test(initialKey) ? 'Am' : initialKey;
   const [keyStr, setKeyStr] = useState(() => {
     const k = parseKey(defaultKey);
@@ -184,7 +200,8 @@ export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = tr
   const stopFlag = useRef(false);
 
   const key = parseKey(keyStr) ?? { root: 9, tonality: 'minor' as const };
-  const { notes, rootFret } = useMemo(() => placeLick(lick, key, octaveDown), [lick, key.root, key.tonality, octaveDown]); // eslint-disable-line
+  const { notes, rootFret, canOctaveDown } = useMemo(() => placeLick(lick, key, octaveDown), [lick, key.root, key.tonality, octaveDown]); // eslint-disable-line
+  const highFret = Math.max(...notes.filter((n) => !n.rest).flatMap((n) => [n.fret, ...n.extra.map((e) => e.fret)]));
   const beats = lickBeats(lick);
   const bpm = Math.round((lick.bpm * speed) / 100);
 
@@ -242,18 +259,22 @@ export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = tr
   return (
     <div className="lick-player">
       <div className="row wrap gap">
-        <label>
-          Key{' '}
-          <select value={keyStr} onChange={(e) => setKeyStr(e.target.value)}>
-            {ALL_KEYS.filter((k) => k.tonality === lick.tonality).map((k) => (
-              <option key={keyShortName(k)} value={keyShortName(k)}>
-                {keyShortName(k)}
-              </option>
-            ))}
-          </select>
-        </label>
+        {lockedKey ? (
+          <span className="pill">Key {lockedKey}</span>
+        ) : (
+          <label>
+            Key{' '}
+            <select value={keyStr} onChange={(e) => setKeyStr(e.target.value)}>
+              {ALL_KEYS.filter((k) => k.tonality === lick.tonality).map((k) => (
+                <option key={keyShortName(k)} value={keyShortName(k)}>
+                  {keyShortName(k)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <span className="pill">Root fret {lick.tonality === 'major' ? `(rel. minor box) ${rootFret}` : rootFret}</span>
-        {comfortableRootFret(lick.tonality === 'major' ? mod12(key.root - 3) : key.root) >= 12 && (
+        {(canOctaveDown || octaveDown) && rootFret + (octaveDown ? 12 : 0) >= 12 && (
           <button className={`chip ${octaveDown ? 'on' : ''}`} onClick={() => setOctaveDown(!octaveDown)}>
             Octave down
           </button>
@@ -290,7 +311,7 @@ export default function LickPlayer({ lick, initialKey = 'Am', showFretboard = tr
           highlight={cur && !cur.rest ? [{ string: cur.s, fret: cur.fret }, ...cur.extra.map((e) => ({ string: e.s, fret: e.fret }))] : []}
           compact
           preferHigh={rootFret >= 12}
-          maxFret={rootFret >= 12 ? 20 : 17}
+          maxFret={Math.min(MAX_FRET, Math.max(rootFret >= 12 ? 20 : 17, highFret + 1))}
         />
       )}
     </div>

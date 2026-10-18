@@ -192,9 +192,29 @@ function phraseLabel(i: number, n: number) {
   return `Phrase ${i + 1} · build`;
 }
 
+const SOLO_KEY = 'fretwise.soloKey';
+
+function loadSoloKey(): number {
+  try {
+    const v = localStorage.getItem(SOLO_KEY);
+    if (v !== null && /^\d+$/.test(v) && +v < 12) return +v;
+  } catch {
+    // storage unavailable
+  }
+  return 9;
+}
+
 function SoloBuilder() {
   const s = useAppState();
-  const [root, setRoot] = useState(9);
+  const [root, setRootState] = useState(loadSoloKey);
+  const setRoot = (r: number) => {
+    setRootState(r);
+    try {
+      localStorage.setItem(SOLO_KEY, String(r));
+    } catch {
+      // storage unavailable
+    }
+  };
   const [scale, setScale] = useState<SoloScale>('minorPent');
   const [source, setSource] = useState<'builtin' | 'external'>('builtin');
   const [progId, setProgId] = useState('aeolian-rock');
@@ -231,8 +251,10 @@ function SoloBuilder() {
     return () => setMixWithOtherAudio(false);
   }, [source]);
 
-  const loadPlan = (p: SoloPlan) => {
-    setRoot(parseNoteName(p.key) ?? 9);
+  // Ready-made solos play in whatever key is chosen at the top; your own saved solos
+  // come back in the key you saved them in.
+  const loadPlan = (p: SoloPlan, keepKey = false) => {
+    if (!keepKey) setRoot(parseNoteName(p.key) ?? 9);
     setScale(p.scale ?? 'minorPent');
     setSource(p.source ?? 'builtin');
     setProgId(p.progression ?? 'blues12');
@@ -291,6 +313,9 @@ function SoloBuilder() {
 
   const lickKey = (l: Lick) =>
     l.tonality === 'major' ? keyShortName({ root, tonality: 'major' }) : keyShortName({ root: scale === 'majorPent' ? mod12(root - 3) : root, tonality: 'minor' });
+  // what to call the key on each phrase: always the key chosen at the top
+  const lickKeyLabel = (l: Lick) =>
+    scale === 'majorPent' && l.tonality === 'minor' ? `${noteName(root, flats)} major (${lickKey(l)} box shape)` : label;
   const lickBpm = source === 'external' ? trackBpm ?? undefined : bpm;
   const phrases = useMemo(
     () => slots.map((id, i) => {
@@ -496,12 +521,12 @@ function SoloBuilder() {
           </button>
         </div>
         <div className="preset-solos">
-          <span className="muted small">Ready-made solos — tap one to load it, then change any phrase:</span>
+          <span className="muted small">Ready-made solos — tap one to load it in {noteName(root, flats)}, then change any phrase:</span>
           <div className="row wrap gap">
             {PRESET_SOLOS.map((p) => (
-              <button key={p.id} className={`chip ${name === p.name ? 'on' : ''}`} title={p.description} onClick={() => loadPlan(p)}>
+              <button key={p.id} className={`chip ${name === p.name ? 'on' : ''}`} title={p.description} onClick={() => loadPlan(p, true)}>
                 {p.vibe ? `${VIBES[p.vibe].emoji} ` : ''}
-                {p.name} <span className="muted">· {p.key} {p.scale === 'majorPent' ? 'major' : 'minor'}</span>
+                {p.name} <span className="muted">· {p.scale === 'majorPent' ? 'major' : 'minor'}</span>
               </button>
             ))}
           </div>
@@ -531,9 +556,9 @@ function SoloBuilder() {
           <div key={i} className="card">
             <span className="eyebrow">{phraseLabel(i, slots.length)}</span>
             <h3>
-              {lick.name} <span className="muted small">· in {lickKey(lick)}</span>
+              {lick.name} <span className="muted small">· in {lickKeyLabel(lick)}</span>
             </h3>
-            <LickPlayer key={`${id}-${root}-${scale}-${lickBpm ?? ''}`} lick={lick} initialKey={lickKey(lick)} showFretboard={false} targetBpm={lickBpm} />
+            <LickPlayer key={`${id}-${root}-${scale}-${lickBpm ?? ''}`} lick={lick} initialKey={lickKey(lick)} showFretboard={false} targetBpm={lickBpm} lockedKey={lickKeyLabel(lick)} />
           </div>
         );
       })}
